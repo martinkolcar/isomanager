@@ -1,0 +1,3730 @@
+<!DOCTYPE html>
+<!-- IsoManager v5 - zlucit nakladky -->
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, interactive-widget=resizes-content">
+<title>IsoManager</title>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref as dbRef, set as dbSet, update as dbUpdate, remove as dbRemove, onValue as dbOnValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+const _app = initializeApp({
+  apiKey: "AIzaSyBZQRG7d7RWLX5eoIPPmX9kRY0ECcfUahg",
+  authDomain: "export-app-425db.firebaseapp.com",
+  databaseURL: "https://export-app-425db-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "export-app-425db",
+  storageBucket: "export-app-425db.firebasestorage.app",
+  messagingSenderId: "726240282678",
+  appId: "1:726240282678:web:0eb77fa22bc8e9db173097"
+});
+window.DB = getDatabase(_app);
+window.DBRef = (p) => dbRef(window.DB, p);
+window.DBSet = (p, v) => dbSet(dbRef(window.DB, p), v);
+window.DBUpdate = (p, v) => dbUpdate(dbRef(window.DB, p), v);
+window.DBRemove = (p) => dbRemove(dbRef(window.DB, p));
+window.DBOn = (p, cb) => { dbOnValue(dbRef(window.DB, p), snap => cb(snap)); return () => {}; };
+window.dispatchEvent(new Event('fbReady'));
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="isometries_data.js?v=2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f2f0eb;--surface:#fff;--surface2:#f0ede7;
+  --border:rgba(0,0,0,0.09);--border2:rgba(0,0,0,0.16);
+  --text:#1c1a17;--text2:#6b6760;--text3:#9b9890;
+  --blue:#1a5fa8;--blue-light:#e8f1fb;--blue-dark:#0c4480;
+  --green:#2d6b10;--green-bg:#e8f3de;
+  --amber:#7a4a08;--amber-bg:#faecd8;
+  --red:#8f2a2a;--red-bg:#fbeaea;
+  --purple:#5b2d8f;--purple-bg:#f0e8fb;
+  --r:8px;--rl:12px;
+}
+html,body{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;background:var(--bg);color:var(--text)}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;gap:8px;padding:0 14px;height:46px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;z-index:10}
+.app-logo{font-size:15px;font-weight:700;color:var(--blue);margin-right:4px}
+.app-logo span{color:var(--text2);font-weight:400}
+.sep{width:1px;height:20px;background:var(--border2);margin:0 2px}
+.online-dot{width:7px;height:7px;border-radius:50%;background:#3a9b3a}
+.online-label{font-size:11px;color:var(--green);font-weight:600}
+.spacer{flex:1}
+.top-search-wrap{position:relative;width:260px}
+.top-search{width:100%;padding:5px 10px 5px 28px;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg);font-size:12px;color:var(--text);outline:none}
+.top-search:focus{border-color:var(--blue);background:#fff}
+.top-search-icon{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:12px;pointer-events:none}
+.search-drop{position:fixed;top:46px;left:0;right:0;width:100vw;background:var(--surface);border:1px solid var(--border2);border-top:none;box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:999;max-height:60vh;overflow-y:auto;display:none}
+.search-drop.open{display:block}
+.srd-item{padding:10px 14px;cursor:pointer;display:flex;gap:10px;align-items:center;border-bottom:1px solid var(--border)}
+.srd-item:active{background:var(--blue-light)}
+.srd-sec{font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;background:var(--blue-light);color:var(--blue-dark);white-space:nowrap;flex-shrink:0}
+.srd-item{padding:6px 12px;cursor:pointer;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border)}
+.srd-item:last-child{border-bottom:none}
+.srd-item:hover{background:var(--surface2)}
+.srd-sec{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:var(--blue-light);color:var(--blue-dark)}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:var(--r);border:1px solid var(--border2);background:transparent;cursor:pointer;font-size:12px;color:var(--text);font-family:inherit;transition:background .12s;white-space:nowrap}
+.btn:hover{background:var(--surface2)}
+.btn-blue{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn-blue:hover{background:var(--blue-dark)}
+.btn-green{background:var(--green-bg);color:var(--green);border-color:#5aaa2a}
+.btn-amber{background:var(--amber-bg);color:var(--amber);border-color:#c8891a}
+.btn-purple{background:var(--purple-bg);color:var(--purple);border-color:#9b5ad4}
+.btn-red{background:var(--red-bg);color:var(--red);border-color:#c94040}
+
+/* NAV TABS */
+.nav-tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto}
+.nav-tab{padding:9px 18px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;color:var(--text2);border-bottom:2px solid transparent;transition:color .12s;letter-spacing:.2px}
+.nav-tab:hover{color:var(--text)}
+.nav-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+
+/* SECTION TABS */
+.sec-tabs{display:flex;gap:2px;padding:8px 12px;background:var(--surface2);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto}
+.sec-tab{padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;border-radius:20px;color:var(--text2);background:transparent;border:1px solid transparent;white-space:nowrap;letter-spacing:.3px;transition:all .12s}
+.sec-tab:hover{background:var(--surface);color:var(--text)}
+.sec-tab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* MAIN */
+.main{display:flex;flex:1;overflow:hidden}
+.page{display:none;flex:1;overflow:hidden;flex-direction:column}
+.page.active{display:flex}
+
+/* SIDEBAR */
+.sidebar{width:230px;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--surface);flex-shrink:0}
+.sb-head{padding:10px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px}
+.sb-inp{width:100%;padding:5px 9px;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg);font-size:12px;color:var(--text);font-family:inherit;outline:none}
+.sb-inp:focus{border-color:var(--blue);background:#fff}
+.iso-list{flex:1;overflow-y:auto}
+.iso-item{padding:7px 12px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:6px;transition:background .1s}
+.iso-item:hover{background:var(--surface2)}
+.iso-item.active{background:var(--blue-light)}
+.iso-item.active .iso-name{color:var(--blue);font-weight:600}
+.iso-name{font-size:12px;word-break:break-all;line-height:1.3}
+.sp-badge{font-size:10px;padding:2px 5px;border-radius:8px;background:var(--surface2);color:var(--text2);white-space:nowrap;flex-shrink:0}
+.sp-badge.has{background:var(--blue-light);color:var(--blue-dark)}
+.sb-foot{padding:6px 12px;font-size:11px;color:var(--text3);border-top:1px solid var(--border)}
+
+/* CONTENT */
+.content{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.c-head{padding:8px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.c-title{font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.editing-by{font-size:10px;color:var(--text3)}
+.table-wrap{flex:1;overflow:auto}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:6px 10px;border-bottom:1px solid var(--border2);color:var(--text2);font-weight:600;font-size:11px;letter-spacing:.3px;text-transform:uppercase;background:var(--bg);position:sticky;top:0;z-index:2;white-space:nowrap}
+td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:hover td{background:var(--surface2)}
+.st-new{color:var(--text3)}
+.st-work{color:var(--amber);font-weight:600}
+.st-done{color:var(--green);font-weight:600}
+.vyvezene-check{width:16px;height:16px;cursor:pointer;accent-color:var(--green)}
+.pkg-chip{font-size:10px;padding:2px 7px;border-radius:8px;background:var(--amber-bg);color:var(--amber);font-weight:600}
+.nakladka-chip{font-size:10px;padding:2px 7px;border-radius:8px;background:var(--purple-bg);color:var(--purple);font-weight:600}
+.sbtn{font-size:11px;padding:3px 7px;border-radius:5px;border:1px solid var(--border2);background:transparent;cursor:pointer;color:var(--text2);font-family:inherit}
+.sbtn:hover{background:var(--surface2)}
+.sbtn.del{color:var(--red)}
+.sbtn.del:hover{background:var(--red-bg)}
+
+/* ADD ROW */
+.add-row{display:flex;gap:6px;padding:10px 10px;border-top:1px solid var(--border);align-items:center;flex-shrink:0;background:var(--surface);flex-wrap:wrap}
+.add-inp{padding:5px 8px;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg);font-size:12px;color:var(--text);font-family:inherit;outline:none}
+.add-inp:focus{border-color:var(--blue);background:#fff}
+
+/* EMPTY */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:var(--text3);gap:8px;font-size:13px;padding:40px}
+.empty-ico{font-size:36px;opacity:.4}
+
+/* PREHĽAD PAGE */
+.prehladpage{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:0}
+.prehladbar{display:flex;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);align-items:center;flex-wrap:wrap;flex-shrink:0}
+.filter-chip{font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--border2);cursor:pointer;background:transparent;color:var(--text2);font-family:inherit}
+.filter-chip.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* BALIKY PAGE */
+.balik-grid{display:flex;flex-wrap:wrap;gap:12px;padding:14px;overflow-y:auto;flex:1;align-content:flex-start}
+.balik-card{border:1px solid var(--border2);border-radius:var(--rl);padding:12px 14px;background:var(--surface);width:220px;flex-shrink:0}
+.balik-card:hover{border-color:var(--blue)}
+.bc-name{font-size:14px;font-weight:700;color:var(--amber)}
+.bc-sub{font-size:11px;color:var(--text2);margin-top:3px;line-height:1.5}
+.bc-acts{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+
+/* NAKLADKY PAGE */
+.nakladka-grid{display:flex;flex-wrap:wrap;gap:12px;padding:14px;overflow-y:auto;flex:1;align-content:flex-start}
+.nakladka-card{border:1px solid var(--border2);border-radius:var(--rl);padding:12px 14px;background:var(--surface);width:260px;flex-shrink:0}
+.nakladka-card:hover{border-color:var(--purple)}
+.nc-name{font-size:14px;font-weight:700;color:var(--purple)}
+.nc-date{font-size:11px;color:var(--text3);margin-top:2px}
+.nc-sub{font-size:11px;color:var(--text2);margin-top:4px;line-height:1.5}
+.nc-acts{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.38);z-index:1000;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--rl);border:1px solid var(--border);padding:20px 22px;width:540px;max-width:96vw;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.18)}
+.modal h3{font-size:14px;font-weight:700;margin-bottom:14px}
+.m-row{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.m-label{font-size:11px;color:var(--text2);font-weight:600;margin-bottom:3px;display:block}
+.m-inp{padding:6px 9px;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg);font-size:12px;color:var(--text);font-family:inherit;outline:none;width:100%}
+.m-inp:focus{border-color:var(--blue);background:#fff}
+.m-sec-title{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:4px;margin-top:12px}
+.spool-check-list{max-height:220px;overflow-y:auto;border:1px solid var(--border2);border-radius:var(--r);padding:6px}
+.sp-check-item{display:flex;align-items:center;gap:7px;padding:4px 6px;border-radius:5px;cursor:pointer}
+.sp-check-item:hover{background:var(--surface2)}
+.sp-check-item input{cursor:pointer;accent-color:var(--blue)}
+.sp-check-label{font-size:12px}
+.sp-check-sub{font-size:10px;color:var(--text3);margin-left:2px}
+.m-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+
+/* USER SETUP */
+.user-setup{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center}
+.user-card{background:var(--surface);border-radius:var(--rl);padding:28px 30px;width:320px;box-shadow:0 20px 60px rgba(0,0,0,0.2);text-align:center}
+.user-card h2{font-size:16px;font-weight:700;margin-bottom:6px}
+.user-card p{font-size:12px;color:var(--text2);margin-bottom:16px}
+.user-card input{width:100%;padding:8px 12px;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg);font-size:13px;color:var(--text);font-family:inherit;margin-bottom:12px;outline:none;text-align:center}
+.user-card input:focus{border-color:var(--blue);background:#fff}
+.av-pick{display:flex;gap:8px;justify-content:center;margin-bottom:16px;flex-wrap:wrap}
+.av-opt{width:32px;height:32px;border-radius:50%;cursor:pointer;border:2px solid transparent;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;transition:border-color .12s}
+.av-opt.sel{border-color:var(--blue)}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ===== MOBILE RESPONSIVE ===== */
+@media (max-width: 700px) {
+  /* TOPBAR */
+  .topbar { padding: 0 8px; gap: 5px; height: 46px; flex-wrap: nowrap; }
+  .app-logo { font-size: 13px; margin-right: 0; }
+  .sep { display: none; }
+  .online-label { font-size: 10px; }
+  .top-search-wrap { flex: 1 !important; min-width: 0; max-width: none !important; }
+  .top-search { font-size: 12px; padding: 5px 8px 5px 24px; }
+  .btn { font-size: 11px; padding: 4px 8px; gap: 3px; }
+  .btn .btn-text { display: none; } /* hide text on small btns */
+  
+  /* NAV TABS */
+  .nav-tab { padding: 8px 10px; font-size: 11px; }
+  
+  /* SPOOLY PAGE: full width list, then content below */
+  #page-spooly { flex-direction: column !important; }
+  #page-spooly > div:first-child { 
+    width: 100% !important; 
+    max-height: 45vh;
+    border-right: none !important; 
+    border-bottom: 1px solid var(--border); 
+    flex-shrink: 0;
+  }
+  .sec-tabs { padding: 5px 6px !important; flex-wrap: wrap; }
+  .sec-tab { padding: 3px 10px; font-size: 11px; }
+  .sb-head { padding: 6px 8px; }
+  .iso-list { flex: 1; overflow-y: auto; }
+  .iso-name { font-size: 11px; }
+  
+  /* CONTENT */
+  .content { flex: 1; min-height: 0; }
+  .c-head { padding: 6px 10px; }
+  .c-title { font-size: 12px; }
+  table { font-size: 11px; }
+  th, td { padding: 5px 6px; }
+  .add-row { padding: 6px 8px; gap: 4px; flex-wrap: wrap; }
+  .add-inp { padding: 4px 6px; font-size: 11px; }
+  
+  /* CARDS */
+  .balik-card, .nakladka-card { width: 100%; }
+  .balik-grid, .nakladka-grid { padding: 8px; gap: 8px; }
+  
+  /* MODAL - slide up from bottom */
+  .modal-bg { align-items: flex-end !important; padding: 0; }
+  .modal { width: 100% !important; max-width: 100vw !important; max-height: 92vh; border-radius: 14px 14px 0 0; margin: 0; }
+  
+  /* PREHLAD */
+  .prehladbar { gap: 4px; padding: 6px 8px; }
+  .filter-chip { font-size: 10px; padding: 2px 6px; }
+}
+
+/* LANDSCAPE mobile */
+@media (max-width: 900px) and (orientation: landscape) {
+  #page-spooly { flex-direction: row !important; }
+  #page-spooly > div:first-child { 
+    width: 200px !important; 
+    max-height: none !important;
+    border-right: 1px solid var(--border) !important; 
+    border-bottom: none !important; 
+  }
+  .iso-list { max-height: none; }
+}
+
+
+.mat-row{display:flex;gap:5px;align-items:center;margin-bottom:5px;flex-wrap:wrap;background:var(--bg);border-radius:var(--r);padding:6px 8px}
+.mat-inp{padding:5px 7px;border-radius:var(--r);border:1px solid var(--border2);background:#fff;font-size:12px;color:var(--text);font-family:inherit;outline:none}
+.mat-inp:focus{border-color:var(--blue)}
+.mat-del{background:none;border:none;cursor:pointer;color:var(--red);font-size:16px;padding:0 4px}
+
+</style>
+// PED kategórie izometrií
+const PED_DATA = {
+  "SUL": {
+    "ÅF-712-20019-22-150-10C1B": "SEP 4.3",
+    "ÅF-712-20083-2-200-10C1B": "SEP 4.3",
+    "AG-712-20077-1-80-10H1A": "SEP 4.3",
+    "AG-712-20078-4-50-10H1A": "SEP 4.3",
+    "ÅL4-712-20019-26-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-27-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-29-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-141-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-144-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-146-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-150-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-153-80-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-155-100-10C1B": "",
+    "ÅL4-712-20019-156-100-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-172-15-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-181-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-182-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20098-1-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20098-2-25-10C1B": "SEP 4.3",
+    "ÅM11-712-20019-1-80-25C1B": "I",
+    "ÅM11-712-20019-2-50-25C1B": "I",
+    "ÅM11-712-20019-7-25-25C1B": "I",
+    "ÅM11-712-20019-9-25-25C1B": "I",
+    "ÅM11-712-20019-12-80-25C1B": "I",
+    "ÅM11-712-20019-13-50-25C1B": "I",
+    "ÅM11-712-20019-14-50-25C1B": "I",
+    "ÅM11-712-20019-16-25-25C1B": "I",
+    "ÅM11-712-20019-18-25-25C1B": "I",
+    "ÅM11-712-20019-20-80-25C1B": "I",
+    "AS-712-20053-1-100-10H2A": "SEP 4.3",
+    "CONDENSATE_POT_DRAIN": "",
+    "FUNNEL-KF-712-20019-17-25-10H1A": "",
+    "FUNNEL-KF-712-20019-34-25-10H1A": "",
+    "FUNNEL-KF-712-20019-52-25-10H1A": "",
+    "FUNNEL-KF-712-20019-174-25-10H1A": "",
+    "FUNNEL-KF-712-20019-183-25-10H1A": "",
+    "FUNNEL-KF-712-20019-205-25-10H1A": "",
+    "FUNNEL-UREA-712-20085-9-25-10H2A": "",
+    "G02-712-20032-1-25-10H1A": "SEP 4.3",
+    "G02-712-20032-3-25-10H1A": "SEP 4.3",
+    "G02-712-20032-4-25-10H1A": "SEP 4.3",
+    "G02-712-20032-6-15-10H1A": "SEP 4.3",
+    "GA-712-20033-1-10-10H1A": "SEP 4.3",
+    "GA-712-20034-1-10-10H1A": "SEP 4.3",
+    "GA-712-20048-1-150-10H1A": "SEP 4.3",
+    "GA-712-20049-1-150-10H1A": "SEP 4.3",
+    "GAL-712-20061-1-350-10H2A": "II",
+    "GAL-712-20061-2-200-10H2A": "II",
+    "GAL-712-20061-5-50-10H2A": "SEP 4.3",
+    "GAL-712-20061-8-150-10H2A": "SEP 4.3",
+    "GAL-712-20061-10-150-10H2A": "II",
+    "GAL-712-20061-14-150-10H2A": "II",
+    "GAT-712-20057-1-350-10H2A": "II",
+    "GAT-712-20057-5-200-10H2A": "II",
+    "GAT-712-20057-6-150-10H2A": "II",
+    "GAT-712-20057-15-250-10H2A": "II",
+    "GAT-712-20057-17-250-10H2A": "II",
+    "GAT-712-20057-20-50-10H2A": "SEP 4.3",
+    "GAT-712-20057-23-200-10H2A": "SEP 4.3",
+    "GAT-712-20057-25-200-10H2A": "II",
+    "GAT-712-20057-30-200-10H2A": "II",
+    "GAT-712-20057-104-200-10H2A": "II",
+    "GCO2-712-20095-1-100-25H2A": "I",
+    "GLP-712-20019-167-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-1-80-10H1A": "SEP 4.3",
+    "GLP-712-20081-2-25-10H1A": "SEP 4.3",
+    "GLP-712-20081-3-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-4-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-5-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-6-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-15-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-18-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-21-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-24-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-26-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-27-50-10H1A": "SEP 4.3",
+    "GLP-712-20081-32-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-37-25-10H1A": "SEP 4.3",
+    "GLP-712-20081-39-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-40-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-41-50-10H1A": "SEP 4.3",
+    "GLP-712-20081-42-25-10H1A": "SEP 4.3",
+    "GLP-712-20081-43-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-44-25-10H1A": "SEP 4.3",
+    "GLP-712-20081-45-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-46-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-47-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-49-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-52-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-54-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-55-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-56-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-57-25-10H1A": "SEP 4.3",
+    "GLP-712-20081-58-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-60-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-61-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-62-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-65-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-68-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-75-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-77-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-79-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-80-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-82-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-84-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-87-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-88-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-89-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-90-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-91-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-92-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-93-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-94-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-95-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-96-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-98-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-99-15-10H1A": "SEP 4.3",
+    "GLP-712-20082-12-15-10H1A": "SEP 4.3",
+    "GLP-712-20082-15-15-10H1A": "SEP 4.3",
+    "GLP-712-20103-1-15-10H1A": "SEP 4.3",
+    "GLS-712-20081-22-15-10H1A": "SEP 4.3",
+    "GLS-712-20081-33-15-10H1A": "SEP 4.3",
+    "GLS-712-20081-36-15-10H1A": "SEP 4.3",
+    "GLS-712-20081-86-15-10H1A": "SEP 4.3",
+    "GLS-712-20082-1-50-10H1A": "SEP 4.3",
+    "GLS-712-20082-2-25-10H1A": "SEP 4.3",
+    "GLS-712-20082-5-25-10H1A": "SEP 4.3",
+    "GLS-712-20082-6-25-10H1A": "SEP 4.3",
+    "GLS-712-20082-7-25-10H1A": "SEP 4.3",
+    "GLS-712-20082-8-25-10H1A": "SEP 4.3",
+    "GLS-712-20082-9-25-10H1A": "SEP 4.3",
+    "GLS-712-20082-10-25-10H1A": "SEP 4.3",
+    "GN2-712-20096-1-100-25H1A": "I",
+    "H2S04-712-20052-1-100-10H2A_ACID_SUMP": "",
+    "H2S04-712-20052-1-100-10H2A_SULFUR_PIT": "",
+    "H2SO4-712-20038-10-50-10H2A": "SEP 4.3",
+    "H2SO4-712-20038-14-50-10H2A": "SEP 4.3",
+    "H2SO4-712-20038-15-25-10H2A": "SEP 4.3",
+    "H2SO4-712-20038-16-25-10H2A": "SEP 4.3",
+    "H2SO4-712-20038-17-50-10H2A": "SEP 4.3",
+    "H2SO4-712-20038-18-25-10H2A": "SEP 4.3",
+    "H2SO4-712-20038-19-25-10H2A": "SEP 4.3",
+    "H2SO4-712-20038-20-50-10H2A": "SEP 4.3",
+    "H2SO4-712-20038-21-25-10H2A": "SEP 4.3",
+    "H2SO4-712-20038-22-25-10H2A": "SEP 4.3",
+    "H2SO4-712-20038-23-25-10H2A": "SEP 4.3",
+    "H2SO4-712-20038-24-25-10H2A": "SEP 4.3",
+    "H2SO4-712-20041-2-50-10H2A": "SEP 4.3",
+    "H2SO4-712-20043-1-80-10H2A": "SEP 4.3",
+    "H2SO4-712-20043-2-50-10H2A": "SEP 4.3",
+    "H2SO4-712-20043-3-25-10H2A": "SEP 4.3",
+    "H2SO4-712-20043-4-25-10H2A": "SEP 4.3",
+    "H2SO4-712-20043-5-80-10H2A": "SEP 4.3",
+    "H2SO4-712-20043-6-25-10H2A": "SEP 4.3",
+    "H2SO4-712-20043-7-50-10H2A": "SEP 4.3",
+    "H2SO4-712-20043-8-50-10H2A": "SEP 4.3",
+    "H2SO4-712-20043-10-25-10H2A": "SEP 4.3",
+    "H2SO4-712-20043-11-25-10H2A": "SEP 4.3",
+    "H2SO4-712-20044-1-50-10H2A": "SEP 4.3",
+    "H2SO4-712-20045-1-80-10H2A": "SEP 4.3",
+    "H2SO4-712-20104-1-40-10H2A": "SEP 4.3",
+    "H2SO4-712-20109-1-50-10H2A": "SEP 4.3",
+    "H2SO4-712-20109-2-50-10H2A": "SEP 4.3",
+    "K(GAL)-712-20061-6-25-10H1A": "SEP 4.3",
+    "K(GAL)-712-20061-9-25-10H1A": "SEP 4.3",
+    "K(GAL)-712-20061-13-50-10H2A": "I",
+    "K(GAL)-712-20108-1-25-10H1A": "SEP 4.3",
+    "K(GAT)-712-20057-2-50-10H2A": "II",
+    "K(GAT)-712-20057-21-25-10H1A": "SEP 4.3",
+    "K(GAT)-712-20057-24-25-10H1A": "SEP 4.3",
+    "K(GAT)-712-20058-11-200-10H2A": "II",
+    "K(GAT)-712-20058-12-200-10H2A": "II",
+    "K(GAT)-712-20060-1-40-10H2A": "II",
+    "K(GAT)-712-20062-2-40-10H2A": "II",
+    "KF-712-20000-10-25-10H1A": "SEP 4.3",
+    "KF-712-20001-9-25-10H1A": "SEP 4.3",
+    "KF-712-20001-10-25-10H1A": "SEP 4.3",
+    "KF-712-20001-14-25-10H1A": "SEP 4.3",
+    "KF-712-20001-19-25-10H1A": "SEP 4.3",
+    "KF-712-20001-28-25-10H1A": "SEP 4.3",
+    "KF-712-20001-31-25-10H1A": "SEP 4.3",
+    "KF-712-20001-39-25-10H1A": "SEP 4.3",
+    "KF-712-20001-42-25-10H1A": "SEP 4.3",
+    "KF-712-20001-45-25-10H1A": "SEP 4.3",
+    "KF-712-20001-54-25-10H1A": "SEP 4.3",
+    "KF-712-20001-59-25-10H1A": "SEP 4.3",
+    "KF-712-20001-63-25-10H1A": "SEP 4.3",
+    "KF-712-20001-65-25-10H1A": "SEP 4.3",
+    "KF-712-20001-67-25-10H1A": "SEP 4.3",
+    "KF-712-20001-70-25-10H1A": "SEP 4.3",
+    "KF-712-20001-71-25-10H1A": "SEP 4.3",
+    "KF-712-20002-4-25-10H1A": "SEP 4.3",
+    "KF-712-20004-3-25-10H1A": "SEP 4.3",
+    "KF-712-20011-1-25-10H1A": "SEP 4.3",
+    "KF-712-20019-4-25-10H1A": "SEP 4.3",
+    "KF-712-20019-8-25-10H1A": "SEP 4.3",
+    "KF-712-20019-10-25-10H1A": "SEP 4.3",
+    "KF-712-20019-11-25-10H1A": "SEP 4.3",
+    "KF-712-20019-17-25-10H1A": "SEP 4.3",
+    "KF-712-20019-19-25-10H1A": "SEP 4.3",
+    "KF-712-20019-23-15-10H1A": "SEP 4.3",
+    "KF-712-20019-28-25-10H1A": "SEP 4.3",
+    "KF-712-20019-30-25-10H1A": "SEP 4.3",
+    "KF-712-20019-32-25-10H1A": "SEP 4.3",
+    "KF-712-20019-34-25-10H1A": "SEP 4.3",
+    "KF-712-20019-145-25-10H1A": "SEP 4.3",
+    "KF-712-20019-147-25-10H1A": "SEP 4.3",
+    "KF-712-20019-149-25-10H1A": "SEP 4.3",
+    "KF-712-20019-151-25-10H1A": "SEP 4.3",
+    "KF-712-20019-152-25-10H1A": "SEP 4.3",
+    "KF-712-20019-183-25-10H1A": "SEP 4.3",
+    "KF-712-20019-184-25-10H1A": "SEP 4.3",
+    "KF-712-20019-189-25-10H1A": "SEP 4.3",
+    "KF-712-20019-190-25-10H1A": "SEP 4.3",
+    "KF-712-20020-1-25-10H1A": "SEP 4.3",
+    "KF-712-20047-1-50-10H1A": "SEP 4.3",
+    "KF-712-20048-3-50-10H1A": "SEP 4.3",
+    "KF-712-20083-4-200-10H1A": "SEP 4.3",
+    "KF-712-20083-5-50-10H1A": "SEP 4.3",
+    "KF-712-20098-3-25-10H1A": "SEP 4.3",
+    "KF-712-20098-4-25-10H1A": "SEP 4.3",
+    "KF-712-20107-1-25-10H1A": "SEP 4.3",
+    "KY-712-20057-9-80-10H1A": "SEP 4.3",
+    "KY-712-20057-10-50-10H1A": "SEP 4.3",
+    "KY-712-20057-11-50-10H1A": "SEP 4.3",
+    "KY-712-20057-12-50-10H1A": "SEP 4.3",
+    "KY-712-20057-13-25-10H1A": "II",
+    "KY-712-20057-29-100-10H2A": "SEP 4.3",
+    "KY-712-20058-1-50-10H1A": "SEP 4.3",
+    "KY-712-20058-2-25-10H1A": "SEP 4.3",
+    "KY-712-20058-3-50-10H1A": "SEP 4.3",
+    "KY-712-20058-4-25-10H1A": "SEP 4.3",
+    "KY-712-20058-9-50-10H1A": "SEP 4.3",
+    "KY-712-20090-1-25-10H1A": "SEP 4.3",
+    "KY-712-20090-2-25-10H1A": "SEP 4.3",
+    "KY-712-20090-3-25-10H1A": "SEP 4.3",
+    "KY-712-20108-2-25-10H1A": "SEP 4.3",
+    "LP_MP_TRAP_DRAIN_TO_EFFLUENT_SUMP": "",
+    "LP_STEAM_TRAP_DRAIN_FILTER_ROOM_HEADER_DRAIN": "",
+    "NaHSO3-712-20027-1-300-10H2A": "SEP 4.3",
+    "NaHSO3-712-20027-2-25-10H2A": "SEP 4.3",
+    "NaHSO3-712-20027-3-200-10H2A": "SEP 4.3",
+    "NaHSO3-712-20027-4-25-10H2A": "SEP 4.3",
+    "NaHSO3-712-20027-5-80-10H2A": "SEP 4.3",
+    "NaHSO3-712-20027-6-100-10H2A": "SEP 4.3",
+    "NaHSO3-712-20027-7-80-10H2A": "SEP 4.3",
+    "NaHSO3-712-20028-1-250-10H2A": "SEP 4.3",
+    "NaHSO3-712-20028-2-25-10H2A": "SEP 4.3",
+    "NaHSO3-712-20028-3-15-16H2A": "SEP 4.3",
+    "NaHSO3-712-20028-4-150-16H2A": "SEP 4.3",
+    "NaHSO3-712-20028-5-25-10H2A": "SEP 4.3",
+    "NaHSO3-712-20028-6-50-16H2A": "SEP 4.3",
+    "NaHSO3-712-20028-7-40-10H2A": "SEP 4.3",
+    "NaHSO3-712-20028-8-150-16H2A": "SEP 4.3",
+    "NaHSO3-712-20028-9-65-16H2A": "SEP 4.3",
+    "NaHSO3-712-20028-10-65-16H2A": "SEP 4.3",
+    "NaHSO3-712-20028-11-65-16H2A": "SEP 4.3",
+    "NaHSO3-712-20028-14-40-10H2A": "SEP 4.3",
+    "NaHSO3-712-20028-15-50-10H2A": "SEP 4.3",
+    "NaHSO3-712-20029-1-100-10H2A": "SEP 4.3",
+    "NaHSO3-712-20030-1-100-10H2A": "SEP 4.3",
+    "NaHSO3-712-20031-1-150-10H2A": "SEP 4.3",
+    "NaOH10-712-20141-1-25-10H2A": "SEP 4.3",
+    "OEL-712-20059-1-25-16H2A": "SEP 4.3",
+    "OEL-712-20059-3-15-16H2A": "SEP 4.3",
+    "TÖ-712-20084-4-50-10H2A": "SEP 4.3",
+    "TÖ-712-20087-15-50-10H2A": "SEP 4.3",
+    "TÖ-712-20087-16-50-10H2A": "SEP 4.3",
+    "UREA-712-20085-1-15-10H2A": "SEP 4.3",
+    "UREA-712-20085-2-15-10H2A": "SEP 4.3",
+    "UREA-712-20085-3-15-10H2A": "SEP 4.3",
+    "UREA-712-20085-4-15-10H2A": "SEP 4.3",
+    "UREA-712-20085-5-15-10H2A": "SEP 4.3",
+    "UREA-712-20085-6-15-10H2A": "SEP 4.3",
+    "UREA-712-20085-7-15-10H2A": "SEP 4.3",
+    "UREA-712-20085-8-15-10H2A": "SEP 4.3",
+    "UREA-712-20085-9-25-10H2A": "SEP 4.3",
+    "VKDN-712-20080-1-40-10H1A": "SEP 4.3",
+    "VKDN-712-20080-2-25-10H1A": "SEP 4.3",
+    "VKDN-712-20080-3-15-10H1A": "SEP 4.3",
+    "VKDN-712-20080-4-25-10H1A": "SEP 4.3",
+    "VKDN-712-20080-5-15-10H1A": "SEP 4.3",
+    "VKDN-712-20080-6-25-10H1A": "SEP 4.3",
+    "VKDN-712-20080-7-15-10H1A": "SEP 4.3",
+    "VKDN-712-20080-8-25-10H1A": "SEP 4.3",
+    "VKDN-712-20080-9-15-10H1A": "SEP 4.3",
+    "VKDN-712-20080-10-25-10H1A": "SEP 4.3",
+    "VKDN-712-20080-11-15-10H1A": "SEP 4.3",
+    "VKDN-712-20080-12-25-10H1A": "SEP 4.3",
+    "VKDN-712-20080-13-15-10H1A": "SEP 4.3",
+    "VKDN-712-20080-14-40-10H1A": "SEP 4.3",
+    "VKDN-712-20080-15-50-10H1A": "SEP 4.3",
+    "VKDN-712-20080-16-50-10H1A": "SEP 4.3",
+    "VKDN-712-20080-17-50-10H1A": "SEP 4.3",
+    "VKDN-712-20080-18-50-10H1A": "SEP 4.3",
+    "VKDN-712-20080-19-50-10H1A": "SEP 4.3",
+    "VKM-712-20057-31-50-10H2A": "SEP 4.3",
+    "VKM-712-20075-1-150-10H2A": "SEP 4.3",
+    "VKM-712-20075-2-25-10H2A": "SEP 4.3",
+    "VKM-712-20075-4-25-10H2A": "SEP 4.3",
+    "VKM-712-20075-5-25-10H2A": "SEP 4.3",
+    "VKM-712-20075-6-25-10H2A": "SEP 4.3",
+    "VKM-712-20075-7-25-10H2A": "SEP 4.3",
+    "VKM-712-20075-9-50-10H2A": "SEP 4.3",
+    "VKM-712-20075-10-50-10H2A": "SEP 4.3",
+    "VKM-712-20075-11-80-10H2A": "SEP 4.3",
+    "VKM-712-20075-12-80-10H2A": "SEP 4.3",
+    "VKM-712-20075-15-25-10H2A": "SEP 4.3",
+    "VKM-712-20075-17-100-10H2A": "SEP 4.3",
+    "VKM-712-20075-18-25-10H2A": "SEP 4.3",
+    "VKM-712-20075-19-25-10H2A": "SEP 4.3",
+    "VKM-712-20075-22-15-10H2A": "II",
+    "VKM-712-20075-32-25-10H2A": "SEP 4.3",
+    "VKM-712-20075-33-25-10H2A": "SEP 4.3",
+    "VKM-712-20075-34-25-10H2A": "SEP 4.3",
+    "VKM-712-20075-45-40-10H2A": "SEP 4.3",
+    "VKS-712-20079-1-100-25H1A": "SEP 4.3",
+    "VKS-712-20079-2-25-25H1A": "SEP 4.3",
+    "VKS-712-20079-3-80-25H1A": "SEP 4.3",
+    "VKS-712-20079-4-80-25H1A": "SEP 4.3",
+    "VKS-712-20079-5-80-25H1A": "SEP 4.3",
+    "VKS-712-20079-6-100-25H1A": "SEP 4.3",
+    "VKS-712-20079-7-80-25H1A": "SEP 4.3",
+    "VKS-712-20079-8-80-25H1A": "SEP 4.3",
+    "VKS-712-20079-9-80-25H1A": "SEP 4.3",
+    "VKS-712-20079-10-80-25H1A": "SEP 4.3",
+    "VKS-712-20079-11-80-25H1A": "SEP 4.3",
+    "VKS-712-20079-12-80-25H1A": "SEP 4.3",
+    "VKT-712-20037-1-25-10H2A": "SEP 4.3",
+    "VMH-712-20000-5-25-10C1B": "SEP 4.3",
+    "VMH-712-20017-5-40-10C1B": "SEP 4.3",
+    "VML-712-20000-12-25-10H1A": "SEP 4.3",
+    "VML-712-20010-2-25-10C1B": "SEP 4.3",
+    "VP-712-20018-4-25-10C1B": "SEP 4.3",
+    "VP-712-20018-7-25-10C1B": "SEP 4.3",
+    "VP-712-20019-191-25-10C1B": "SEP 4.3",
+    "VP-712-20019-192-25-10C1B": "SEP 4.3",
+    "VP-712-20022-3-25-10C1B": "SEP 4.3",
+    "VT-712-20054-1-25-10H1A": "SEP 4.3",
+    "VT-712-20054-2-15-10H1A": "SEP 4.3",
+    "VT-712-20054-3-15-10H1A": "SEP 4.3",
+    "VT-712-20054-6-15-10H1A": "SEP 4.3",
+    "VVM-712-20051-2-25-10H2A": "SEP 4.3",
+    "VVM-712-20075-30-50-10H2A": "SEP 4.3",
+    "VVM-712-20075-31-25-10H2A": "SEP 4.3",
+    "VVM-712-20075-35-80-10H2A": "SEP 4.3",
+    "VVM-712-20075-37-80-10H2A": "SEP 4.3",
+    "VVM-712-20075-39-25-10H2A": "SEP 4.3",
+    "VVM-712-20075-47-25-10H2A": "SEP 4.3",
+    "VVM-712-20076-1-100-10H2A": "SEP 4.3",
+    "VVM-712-20083-3-80-10H2A": "SEP 4.3",
+    "VVM-712-20083-6-25-10H2A": "SEP 4.3",
+    "VVM-712-20093-1-200-10H2A": "SEP 4.3",
+    "ÅF-712-20056-1-100-10C1B": "SEP 4.3",
+    "ÅF-712-20083-1-150-25C1B": "SEP 4.3",
+    "ÅL4-712-20019-21-80-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-24-80-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-25-80-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-33-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-35-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-36-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-38-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-40-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-41-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-42-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-43-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-44-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-45-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-46-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-47-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-49-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-51-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-53-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-54-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-59-15-10C1B": "",
+    "ÅL4-712-20019-60-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-61-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-62-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-63-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-64-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-66-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-68-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-69-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-71-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-73-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-75-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-77-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-78-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-79-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-85-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-87-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-89-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-90-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-92-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-94-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-95-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-97-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-104-15-10C1B": "",
+    "ÅL4-712-20019-105-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-107-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-109-15-10C1B": "",
+    "ÅL4-712-20019-110-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-112-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-115-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-117-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-119-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-120-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-122-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-124-15-10C1B": "",
+    "ÅL4-712-20019-125-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-127-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-129-15-10C1B": "",
+    "ÅL4-712-20019-130-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-132-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-134-15-10C1B": "",
+    "ÅL4-712-20019-135-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-137-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-142-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-148-80-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-154-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-157-40-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-160-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-161-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-163-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-168-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-177-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-179-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-186-100-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-187-40-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-193-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-194-25-10C1B": "",
+    "ÅL4-712-20019-195-25-10C1B": "",
+    "ÅL4-712-20019-196-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-200-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-203-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-204-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-207-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-208-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-211-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-213-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-214-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-215-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-216-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-217-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-218-25-10C1B": "",
+    "ÅL4-712-20019-219-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-220-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-221-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-224-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-227-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-228-25-10C1B": "",
+    "ÅL4-712-20019-229-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-230-15-10C1B": "",
+    "ÅL4-712-20019-231-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-234-80-10C1B": "",
+    "ÅL4-712-20019-235-80-10C1B": "",
+    "ÅL4-712-20019-236-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-237-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-238-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-239-40-10C1B": "",
+    "ÅL4-712-20019-244-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-245-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-249-15-10C1B": "",
+    "ÅL4-712-20019-250-15-10C1B": "",
+    "ÅL4-712-20019-251-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-252-15-10C1B": "",
+    "ÅL4-712-20019-253-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-254-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-257-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-258-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-261-15-10C1B": "",
+    "ÅL4-712-20019-265-15-10C1B": "",
+    "ÅL4-712-20019-266-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-267-15-10C1B": "",
+    "ÅL4-712-20019-268-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-269-15-10C1B": "",
+    "ÅL4-712-20019-270-15-10C1B": "",
+    "ÅL4-712-20019-271-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-272-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-275-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-276-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-280-15-10C1B": "",
+    "ÅL4-712-20019-281-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-282-15-10C1B": "",
+    "ÅL4-712-20019-285-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-288-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-289-15-10C1B": "",
+    "ÅL4-712-20019-290-15-10C1B": "",
+    "ÅL4-712-20019-291-15-10C1B": "",
+    "ÅL4-712-20019-292-15-10C1B": "",
+    "ÅL4-712-20019-293-15-10C1B": "",
+    "ÅL4-712-20019-294-15-10C1B": "",
+    "ÅL4-712-20019-295-15-10C1B": "",
+    "ÅL4-712-20019-296-15-10C1B": "",
+    "ÅL4-712-20019-297-15-10C1B": "",
+    "ÅL4-712-20019-298-15-10C1B": "",
+    "ÅL4-712-20019-299-15-10C1B": "",
+    "ÅL4-712-20019-300-15-10C1B": "",
+    "ÅL4-712-20019-301-15-10C1B": "",
+    "ÅL4-712-20019-302-15-10C1B": "",
+    "ÅL4-712-20019-303-15-10C1B": "",
+    "ÅL4-712-20019-304-15-10C1B": "",
+    "ÅL4-712-20019-305-15-10C1B": "",
+    "ÅL4-712-20019-306-80-10C1B": "",
+    "ÅL4-712-20019-307-15-10C1B": "",
+    "ÅL4-712-20019-308-50-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-309-15-10C1B": "",
+    "ÅL4-712-20019-310-15-10C1B": "",
+    "ÅL4-712-20019-311-15-10C1B": "",
+    "ÅL4-712-20019-312-15-10C1B": "",
+    "ÅL4-712-20019-313-15-10C1B": "",
+    "ÅL4-712-20019-314-15-10C1B": "",
+    "ÅL4-712-20019-315-15-10C1B": "",
+    "ÅL4-712-20019-316-15-10C1B": "",
+    "ÅL4-712-20019-317-15-10C1B": "",
+    "ÅL4-712-20019-318-15-10C1B": "",
+    "ÅL4-712-20019-319-15-10C1B": "",
+    "ÅL4-712-20019-320-15-10C1B": "",
+    "ÅL4-712-20019-321-15-10C1B": "",
+    "ÅL4-712-20019-322-15-10C1B": "",
+    "ÅL4-712-20019-323-15-10C1B": "",
+    "ÅL4-712-20019-324-15-10C1B": "",
+    "ÅL4-712-20019-325-80-10C1B": "",
+    "ÅL4-712-20019-326-15-10C1B": "",
+    "ÅL4-712-20019-327-15-10C1B": "",
+    "ÅL4-712-20019-328-25-10C1B": "",
+    "ÅL4-712-20019-329-25-10C1B": "",
+    "ÅL4-712-20019-330-25-10C1B": "",
+    "ÅL4-712-20019-331-25-10C1B": "",
+    "ÅL4-712-20019-332-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-333-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-334-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-335-15-10C1B": "",
+    "ÅL4-712-20019-336-15-10C1B": "",
+    "ÅL4-712-20019-337-15-10C1B": "",
+    "ÅL4-712-20019-338-15-10C1B": "",
+    "ÅL4-712-20019-340-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20019-343-15-10C1B": "",
+    "ÅL4-712-20019-344-50-10C1B": "",
+    "ÅL4-712-20019-345-15-10C1B": "",
+    "ÅL4-712-20019-346-15-10C1B": "",
+    "ÅL4-712-20019-347-15-10C1B": "",
+    "ÅL4-712-20019-348-15-10C1B": "",
+    "ÅL4-712-20019-349-15-10C1B": "",
+    "ÅL4-712-20019-350-15-10C1B": "",
+    "ÅL4-712-20019-351-15-10C1B": "",
+    "ÅL4-712-20019-352-15-10C1B": "",
+    "ÅL4-712-20019-353-15-10C1B": "",
+    "ÅL4-712-20019-354-15-10C1B": "",
+    "ÅL4-712-20019-355-15-10C1B": "",
+    "ÅL4-712-20019-356-25-10C1B": "",
+    "ÅL4-712-20019-357-15-10C1B": "",
+    "ÅL4-712-20019-359-15-10C1B": "",
+    "ÅL4-712-20019-360-15-10C1B": "",
+    "ÅL4-712-20019-361-15-10C1B": "",
+    "ÅL4-712-20019-362-15-10C1B": "",
+    "ÅL4-712-20019-363-15-10C1B": "",
+    "ÅL4-712-20019-364-15-10C1B": "",
+    "ÅL4-712-20019-365-15-10C1B": "",
+    "ÅL4-712-20019-366-15-10C1B": "",
+    "ÅL4-712-20019-367-15-10C1B": "",
+    "ÅL4-712-20019-368-15-10C1B": "",
+    "ÅL4-712-20019-369-15-10C1B": "",
+    "ÅL4-712-20019-370-15-10C1B": "",
+    "ÅL4-712-20019-372-25-10C1B": "",
+    "ÅL4-712-20019-374-25-10C1B": "",
+    "ÅL4-712-20019-376-25-10C1B": "",
+    "ÅL4-712-20019-378-80-10C1B": "",
+    "ÅL4-712-20019-379-80-10C1B": "",
+    "ÅL4-712-20019-380-25-10C1B": "",
+    "ÅL4-712-20019-381-50-10C1B": "",
+    "ÅL4-712-20019-382-25-10C1B": "",
+    "ÅL4-712-20019-383-25-10C1B": "",
+    "ÅL4-712-20019-384-25-10C1B": "",
+    "ÅL4-712-20019-385-80-10C1B": "",
+    "ÅL4-712-20019-386-25-10C1B": "",
+    "ÅL4-712-20019-387-25-10C1B": "",
+    "ÅL4-712-20019-388-25-10C1B": "",
+    "ÅL4-712-20019-389-80-10C1B": "",
+    "ÅL4-712-20019-390-25-10C1B": "",
+    "ÅL4-712-20019-391-25-10C1B": "",
+    "ÅL4-712-20019-392-25-10C1B": "",
+    "ÅL4-712-20019-393-25-10C1B": "",
+    "ÅL4-712-20019-394-25-10C1B": "",
+    "ÅL4-712-20019-395-40-10C1B": "",
+    "ÅL4-712-20019-396-25-10C1B": "",
+    "ÅL4-712-20019-397-25-10C1B": "",
+    "ÅL4-712-20019-398-25-10C1B": "",
+    "ÅL4-712-20019-399-25-10C1B": "",
+    "ÅL4-712-20019-400-15-10C1B": "",
+    "ÅL4-712-20019-401-15-10C1B": "",
+    "ÅL4-712-20019-402-15-10C1B": "",
+    "ÅL4-712-20019-403-15-10C1B": "",
+    "ÅL4-712-20019-404-15-10C1B": "",
+    "ÅL4-712-20019-405-15-10C1B": "",
+    "ÅL4-712-20019-406-15-10C1B": "",
+    "ÅL4-712-20019-407-25-10C1B": "",
+    "ÅL4-712-20019-408-80-10C1B": "",
+    "ÅL4-712-20019-409-15-10C1B": "",
+    "ÅL4-712-20019-410-15-10C1B": "",
+    "ÅL4-712-20019-412-25-10C1B": "",
+    "ÅL4-712-20019-413-25-10C1B": "",
+    "ÅL4-712-20019-414-25-10C1B": "",
+    "ÅL4-712-20019-415-15-10C1B": "",
+    "ÅL4-712-20019-417-15-10C1B": "",
+    "ÅL4-712-20019-418-15-10C1B": "",
+    "ÅL4-712-20019-419-15-10C1B": "",
+    "ÅL4-712-20019-420-25-10C1B": "",
+    "ÅL4-712-20019-421-25-10C1B": "",
+    "ÅL4-712-20019-422-15-10C1B": "",
+    "ÅL4-712-20019-423-15-10C1B": "",
+    "ÅL4-712-20019-424-15-10C1B": "",
+    "ÅL4-712-20019-425-15-10C1B": "",
+    "ÅL4-712-20019-426-25-10C1B": "",
+    "ÅL4-712-20019-427-15-10C1B": "",
+    "ÅL4-712-20019-428-15-10C1B": "",
+    "ÅL4-712-20019-429-15-10C1B": "",
+    "ÅL4-712-20019-430-15-10C1B": "",
+    "ÅL4-712-20067-31-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20067-32-25-10C1B": "",
+    "ÅL4-712-20067-35-25-10C1B": "SEP 4.3",
+    "ÅL4-712-20067-36-25-10C1B": "",
+    "ÅL4-712-20115-1-80-10C1B": "",
+    "BLOW_DOWN_TANK_MEAS_712-271901PI": "",
+    "CNCG_FOUL_CONDENSATE_TANK_MEAS_BOTTOM_712-2435LI": "",
+    "CNCG_FOUL_CONDENSATE_TANK_MEAS_TOP_712-2435LI": "",
+    "CNCG_VACUUM_PUMP_TANK_MEAS": "",
+    "CNCG_VACUUM_PUMP_TANK_MEAS_BOTTOM_712-2407LC": "",
+    "CNCG_VACUUM_PUMP_TANK_MEAS_BOTTOM_712-810903LI": "",
+    "CNCG_VACUUM_PUMP_TANK_MEAS_TOP_712-2407LC": "",
+    "CNCG_VACUUM_PUMP_TANK_MEAS_TOP_712-810903LI": "",
+    "G02-712-20032-2-25-10H1A": "SEP 4.3",
+    "GA-712-20048-5-150-10H1A": "SEP 4.3",
+    "GLP-712-20081-29-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-59-15-10H1A": "SEP 4.3",
+    "GLP-712-20081-63-15-10H1A": "SEP 4.3",
+    "GLS-712-20082-3-25-10H1A": "SEP 4.3",
+    "H2SO4-712-20043-9-25-10H2A": "SEP 4.3",
+    "K(GAL)-712-20062-1-40-10H2A": "I",
+    "KF-712-20019-106-25-10H1A": "SEP 4.3",
+    "KF-712-20019-108-25-10H1A": "SEP 4.3",
+    "KF-712-20019-111-25-10H1A": "SEP 4.3",
+    "KF-712-20019-113-25-10H1A": "SEP 4.3",
+    "KF-712-20019-116-25-10H1A": "SEP 4.3",
+    "KF-712-20019-118-25-10H1A": "SEP 4.3",
+    "KF-712-20019-121-25-10H1A": "SEP 4.3",
+    "KF-712-20019-123-25-10H1A": "SEP 4.3",
+    "KF-712-20019-126-25-10H1A": "SEP 4.3",
+    "KF-712-20019-128-25-10H1A": "SEP 4.3",
+    "KF-712-20019-131-25-10H1A": "SEP 4.3",
+    "KF-712-20019-133-25-10H1A": "SEP 4.3",
+    "KF-712-20019-136-25-10H1A": "SEP 4.3",
+    "KF-712-20019-138-25-10H1A": "SEP 4.3",
+    "KF-712-20019-162-25-10H1A": "SEP 4.3",
+    "KF-712-20019-165-25-10H1A": "SEP 4.3",
+    "KF-712-20019-174-25-10H1A": "SEP 4.3",
+    "KF-712-20019-178-25-10H1A": "SEP 4.3",
+    "KF-712-20019-180-25-10H1A": "SEP 4.3",
+    "KF-712-20019-201-25-10H1A": "SEP 4.3",
+    "KF-712-20019-202-25-10H1A": "SEP 4.3",
+    "KF-712-20019-205-25-10H1A": "SEP 4.3",
+    "KF-712-20019-206-25-10H1A": "SEP 4.3",
+    "KF-712-20019-209-25-10H1A": "SEP 4.3",
+    "KF-712-20019-210-25-10H1A": "SEP 4.3",
+    "KF-712-20019-222-25-10H1A": "SEP 4.3",
+    "KF-712-20019-223-25-10H1A": "SEP 4.3",
+    "KF-712-20019-225-25-10H1A": "SEP 4.3",
+    "KF-712-20019-226-25-10H1A": "SEP 4.3",
+    "KF-712-20019-241-25-10H1A": "SEP 4.3",
+    "KF-712-20019-243-25-10H1A": "SEP 4.3",
+    "KF-712-20019-246-25-10H1A": "SEP 4.3",
+    "KF-712-20019-247-25-10H1A": "SEP 4.3",
+    "KF-712-20019-248-50-10H1A": "",
+    "KF-712-20019-255-25-10H1A": "SEP 4.3",
+    "KF-712-20019-256-25-10H1A": "SEP 4.3",
+    "KF-712-20019-259-25-10H1A": "SEP 4.3",
+    "KF-712-20019-260-25-10H1A": "SEP 4.3",
+    "KF-712-20019-273-25-10H1A": "SEP 4.3",
+    "KF-712-20019-274-25-10H1A": "SEP 4.3",
+    "KF-712-20019-278-25-10H1A": "SEP 4.3",
+    "KF-712-20019-279-25-10H1A": "SEP 4.3",
+    "KF-712-20019-283-50-10H1A": "",
+    "KF-712-20019-286-25-10H1A": "",
+    "KF-712-20019-287-25-10H1A": "",
+    "KF-712-20019-37-25-10H1A": "SEP 4.3",
+    "KF-712-20019-371-25-10H1A": "",
+    "KF-712-20019-373-25-10H1A": "",
+    "KF-712-20019-375-25-10H1A": "",
+    "KF-712-20019-377-25-10H1A": "",
+    "KF-712-20019-39-25-10H1A": "SEP 4.3",
+    "KF-712-20019-50-25-10H1A": "SEP 4.3",
+    "KF-712-20019-52-25-10H1A": "SEP 4.3",
+    "KF-712-20019-65-25-10H1A": "SEP 4.3",
+    "KF-712-20019-67-25-10H1A": "SEP 4.3",
+    "KF-712-20019-70-25-10H1A": "SEP 4.3",
+    "KF-712-20019-72-25-10H1A": "SEP 4.3",
+    "KF-712-20019-74-25-10H1A": "SEP 4.3",
+    "KF-712-20019-76-25-10H1A": "SEP 4.3",
+    "KF-712-20019-86-25-10H1A": "SEP 4.3",
+    "KF-712-20019-88-25-10H1A": "SEP 4.3",
+    "KF-712-20019-91-25-10H1A": "SEP 4.3",
+    "KF-712-20019-93-25-10H1A": "SEP 4.3",
+    "KF-712-20019-96-25-10H1A": "SEP 4.3",
+    "KF-712-20019-98-25-10H1A": "SEP 4.3",
+    "KF-712-20055-1-50-10H1A": "",
+    "KF-712-20055-2-50-10H1A": "",
+    "KF-712-20056-2-50-10H1A": "",
+    "KY-712-20057-14-50-10H1A": "SEP 4.3",
+    "KY-712-20090-4-40-10H1A": "SEP 4.3",
+    "KY-712-20090-5-40-10H1A": "SEP 4.3",
+    "SO2SCRUBBER_MEAS_712-2247PI": "",
+    "VKM-712-20075-8-25-10H2A": "SEP 4.3",
+    "VKM-712-20075-13-15-10H2A": "SEP 4.3",
+    "VKM-712-20075-14-25-10H2A": "SEP 4.3",
+    "VKM-712-20075-16-50-10H2A": "SEP 4.3",
+    "VKT-712-20037-2-25-10H2A": "SEP 4.3",
+    "VKT-712-20039-2-25-10H2A": "SEP 4.3",
+    "VMH-712-20000-22-25-10C1B": "SEP 4.3",
+    "VVM-712-20051-1-50-10H2A": "SEP 4.3",
+    "VVM-712-20051-3-25-10H2A": "SEP 4.3",
+    "ÅF-712-20001-30-250-40C2B": "I",
+    "ÅF-712-20001-38-300-40C2B": "I",
+    "ÅF-712-20001-47-250-40C2B": "I",
+    "ÅF-712-20001-72-25-40C2B": "I",
+    "ÅF-712-20002-2-150-10C1B": "II",
+    "ÅF-712-20002-3-25-10C1B": "SEP 4.3",
+    "ÅF-712-20004-2-250-10C1B": "I",
+    "ÅM40-712-20001-13-25-160C3B": "II",
+    "ÅM40-712-20001-18-25-160C3B": "II",
+    "ÅM40-712-20001-37-80-160C3B": "IV",
+    "ÅM40-712-20001-40-150-160C3B": "IV",
+    "ÅM40-712-20001-41-25-160C3B": "IV",
+    "ÅM40-712-20001-5-25-160C3B": "IV",
+    "ÅM40-712-20001-50-150-160C3B": "II",
+    "ÅM40-712-20001-6-10-160H2B": "SEP 4.3",
+    "ÅM40-712-20001-61-150-160C3B": "IV",
+    "ÅM40-712-20001-7-25-160C3B": "II",
+    "ÅM40-712-20001-8-25-160C3B": "II",
+    "ÅM58-712-20001-1-150-160C1B": "IV",
+    "ÅM58-712-20001-15-50-160C4B": "IV",
+    "ÅM58-712-20001-2-100-160C4B": "IV",
+    "ÅM58-712-20001-27-25-160C1B": "IV",
+    "ÅM58-712-20001-29-40-160C4B": "IV",
+    "ÅM58-712-20001-32-100-160C1B": "IV",
+    "ÅM58-712-20001-33-100-160C3B": "IV",
+    "ÅM58-712-20001-34-80-160C3B": "IV",
+    "ÅM58-712-20001-35-80-160C1B": "IV",
+    "ÅM58-712-20001-49-150-160C3B": "IV",
+    "ÅM58-712-20001-51-50-160C3B": "IV",
+    "ÅM58-712-20001-53-25-160C3B": "IV",
+    "ÅM58-712-20001-58-25-160C3B": "IV",
+    "ÅM58-712-20001-60-100-160C1B": "IV",
+    "ÅM58-712-20001-62-25-160C1B": "IV",
+    "ÅM58-712-20001-64-25-160C3B": "IV",
+    "ÅM58-712-20001-66-25-160C3B": "IV",
+    "ÅM58-712-20001-69-25-160C1B": "IV",
+    "ÅM58-712-20002-1-80-160C1B": "IV",
+    "ÅM58-712-20004-1-50-160C1B": "IV",
+    "VFF-712-20014-1-10-160H2B": "SEP 4.3",
+    "VFF-712-20014-2-20-160H2B": "IV",
+    "VMH-712-20000-1-80-160C1B": "I",
+    "VMH-712-20000-11-25-160C3B": "IV",
+    "VMH-712-20000-2-50-160C1B": "IV",
+    "VMH-712-20000-20-80-160C1B": "I",
+    "VMH-712-20000-21-25-160C1B": "I",
+    "VMH-712-20000-3-50-160C1B": "IV",
+    "VMH-712-20000-4-25-160C1B": "I",
+    "VMH-712-20000-6-15-160C1B": "SEP 4.3",
+    "VMH-712-20000-7-15-160C1B": "SEP 4.3",
+    "VMH-712-20000-8-25-160C3B": "IV",
+    "VMH-712-20000-9-15-160C1B": "SEP 4.3",
+    "VP-712-20005-1-80-160C1B": "IV",
+    "VP-712-20005-2-25-160C1B": "IV",
+    "VP-712-20006-1-80-160C1B": "IV",
+    "VP-712-20006-2-25-160C1B": "IV",
+    "VP-712-20007-1-80-160C1B": "IV",
+    "VP-712-20007-2-25-160C1B": "IV",
+    "VP-712-20008-1-80-160C1B": "IV",
+    "VP-712-20008-2-25-160C1B": "IV",
+    "VP-712-20010-1-25-160C1B": "IV",
+    "VP-712-20012-1-80-160C1B": "IV",
+    "VP-712-20012-2-25-160C1B": "",
+    "VP-712-20013-1-80-160C1B": "IV",
+    "VP-712-20013-2-25-160C1B": "IV",
+    "VP-712-20015-1-40-160C1B": "IV",
+    "VP-712-20016-2-25-160C1B": "IV",
+    "VP-712-20016-3-20-160C1B": "SEP 4.3",
+    "VP-712-20016-4-10-160H2B": "SEP 4.3",
+    "VP-712-20017-1-150-160C1B": "IV",
+    "VP-712-20017-2-50-160C1B": "IV",
+    "VP-712-20017-3-50-160C1B": "IV",
+    "VP-712-20017-4-40-160C1B": "IV",
+    "VP-712-20017-6-40-160C1B": "IV",
+    "VP-712-20018-1-200-160C1B": "IV",
+    "VP-712-20018-2-150-160C1B": "IV",
+    "VP-712-20018-3-25-160C1B": "IV",
+    "VP-712-20018-5-150-160C1B": "IV",
+    "VP-712-20018-6-25-160C1B": "IV",
+    "VP-712-20019-101-50-160C1B": "IV",
+    "VP-712-20019-103-50-160C1B": "IV",
+    "VP-712-20021-1-250-160C1B": "IV",
+    "VP-712-20021-2-250-160C1B": "IV",
+    "VP-712-20021-3-300-160C1B": "IV",
+    "VP-712-20022-1-50-160C1B": "IV",
+    "VP-712-20022-2-25-160C1B": "IV",
+    "VP-712-20023-1-50-160C1B": "IV",
+    "VP-712-20023-2-50-10C1B": "SEP 4.3",
+    "VP-712-20025-1-150-160C1B": "IV",
+    "VP-712-20025-2-150-160C1B": "IV",
+    ".": "#REF!",
+    "?": "#REF!"
+  },
+  "FLA": {
+    "ÅL3-710-20049-1-50-10C1B": "SEP 4.3",
+    "ÅL3-710-20049-4-100-10C1B": "SEP 4.3",
+    "ÅL3-710-20049-7-80-10C1B": "SEP 4.3",
+    "GAL-710-20045-2-150-10H2A": "SEP 4.3",
+    "GAL-710-20047-2-50-10H2A": "SEP 4.3",
+    "GAL-710-20047-4-50-10H2A": "SEP 4.3",
+    "GAL-710-20048-1-150-10H2A": "II",
+    "GAL-710-20048-3-150-10H2A": "II",
+    "GAT-710-20042-1-300-10H2A": "II",
+    "GAT-710-20042-4-100-10H2A": "SEP 4.3",
+    "GAT-710-20043-1-300-10H2A": "II",
+    "GAT-710-20044-2-300-10H2A": "I",
+    "GAT-710-20046-2-50-10H2A": "II",
+    "GLP-710-20055-1-15-10H1A": "SEP 4.3",
+    "GLP-710-20055-5-15-10H1A": "SEP 4.3",
+    "GLP-710-20057-6-15-10H1A": "SEP 4.3",
+    "GLP-710-20065-1-15-16H1A": "SEP 4.3",
+    "GLP-710-20065-4-15-10H1A": "SEP 4.3",
+    "K(GAT)-710-20050-1-80-10H2A": "I",
+    "KY-710-20058-1-25-10H2A": "SEP 4.3",
+    "KY-710-20059-1-25-10H2A": "SEP 4.3",
+    "KY-710-20060-1-25-10H2A": "SEP 4.3",
+    "KY-710-20061-1-25-10H2A": "SEP 4.3",
+    "KY-710-20063-1-25-10H2A": "SEP 4.3",
+    "KY-710-20064-1-50-10H2A": "SEP 4.3",
+    "OEL-710-20056-1-15-16H2A": "SEP 4.3",
+    "OEL-710-20056-2-15-16H2A": "SEP 4.3",
+    ".": "."
+  },
+  "LIG": {
+    "ÅL3-720-20016-1-200-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-2-40-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-3-200-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-4-25-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-5-25-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-7-25-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-11-25-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-13-25-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-15-25-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-17-25-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-29-25-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-30-25-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-32-25-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-34-25-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-35-25-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-37-25-10C1B": "SEP 4.3",
+    "GA-720-20032-1-250-10H1A": "SEP 4.3",
+    "GA-720-20038-1-200-10H1A": "SEP 4.3",
+    "GA-720-20049-1-100-10H1A": "SEP 4.3",
+    "GA-720-20058-1-150-10H1A": "SEP 4.3",
+    "GA-720-20093-1-80-10H1A": "SEP 4.3",
+    "GA-720-20093-2-150-10H1A": "SEP 4.3",
+    "GA-720-20093-3-200-10H1A": "SEP 4.3",
+    "GA-720-20093-4-250-10H1A": "SEP 4.3",
+    "GA-720-20101-1-150-10H1A": "SEP 4.3",
+    "GA-720-20101-2-150-10H1A": "SEP 4.3",
+    "GA-720-20102-1-150-10H1A": "SEP 4.3",
+    "GA-720-20102-2-200-10H1A": "SEP 4.3",
+    "GA-720-20102-3-250-10H1A": "SEP 4.3",
+    "GA-720-20102-4-350-10H1A": "SEP 4.3",
+    "GA-720-20108-1-150-10H1A": "SEP 4.3",
+    "GA-720-20108-2-150-10H1A": "SEP 4.3",
+    "GA-720-20135-1-100-10H1A": "SEP 4.3",
+    "GA-720-20138-1-150-10H1A": "SEP 4.3",
+    "GA-720-20151-1-400-10H1A": "SEP 4.3",
+    "GA-720-20152-1-400-10H1A": "SEP 4.3",
+    "GA-720-20189-1-50-10H1A": "SEP 4.3",
+    "GCO2-720-20001-1-100-40H2A": "I",
+    "GCO2-720-20001-2-150-10H2A": "I",
+    "GCO2-720-20001-3-200-10H2A": "I",
+    "GCO2-720-20001-5-150-10H2A": "SEP 4.3",
+    "GCO2-720-20001-6-100-40H2A": "I",
+    "GCO2-720-20001-7-200-10H2A": "I",
+    "GCO2-720-20001-8-15-10H2A": "SEP 4.3",
+    "GLP12-720-20048-1-350-10H1A": "SEP 4.3",
+    "GLP12-720-20086-1-100-16H1A": "I",
+    "GLP12-720-20086-7-80-16H1A": "I",
+    "GLP12-720-20087-2-25-10H1A": "SEP 4.3",
+    "GLP12-720-20088-1-15-10H1A": "SEP 4.3",
+    "GLP12-720-20092-1-350-10H1A": "SEP 4.3",
+    "GLP12-720-20129-1-50-16H1A": "SEP 4.3/I",
+    "GLP12-720-20129-2-50-16H1A": "SEP 4.3/I",
+    "GLP12-720-20180-2-50-10H1A": "SEP 4.3",
+    "GLP12-720-20181-1-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-1-80-10H1A": "SEP 4.3",
+    "GLP-720-20004-2-50-10H1A": "SEP 4.3",
+    "GLP-720-20004-3-50-10H1A": "SEP 4.3",
+    "GLP-720-20004-4-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-5-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-6-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-7-50-10H1A": "SEP 4.3",
+    "GLP-720-20004-8-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-9-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-10-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-11-40-10H1A": "SEP 4.3",
+    "GLP-720-20004-12-40-10H1A": "SEP 4.3",
+    "GLP-720-20004-13-40-10H1A": "SEP 4.3",
+    "GLP-720-20004-17-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-18-25-10H1A": "SEP 4.3",
+    "GLP-720-20004-19-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-20-25-10H1A": "SEP 4.3",
+    "GLP-720-20004-21-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-22-25-10H1A": "SEP 4.3",
+    "GLP-720-20004-23-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-24-25-10H1A": "SEP 4.3",
+    "GLP-720-20004-25-25-10H1A": "SEP 4.3",
+    "GLP-720-20004-26-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-27-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-28-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-29-25-10H1A": "SEP 4.3",
+    "GLP-720-20004-30-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-31-25-10H1A": "SEP 4.3",
+    "GLP-720-20004-32-25-10H1A": "SEP 4.3",
+    "GLP-720-20004-33-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-34-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-35-25-10H1A": "SEP 4.3",
+    "GLP-720-20004-36-25-10H1A": "SEP 4.3",
+    "GLP-720-20004-37-25-10H1A": "SEP 4.3",
+    "GLP-720-20004-38-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-39-25-10H1A": "SEP 4.3",
+    "GLP-720-20004-40-25-10H1A": "SEP 4.3",
+    "GLP-720-20004-41-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-42-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-43-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-44-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-45-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-46-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-47-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-48-15-10H1A": "SEP 4.3",
+    "GLP-720-20004-49-15-10H1A": "SEP 4.3",
+    "GLS-720-20011-1-50-10H1A": "SEP 4.3",
+    "GLS-720-20011-2-40-10H1A": "SEP 4.3",
+    "GLS-720-20011-3-25-10H1A": "SEP 4.3",
+    "GLS-720-20011-7-40-10H1A": "SEP 4.3",
+    "GLS-720-20011-11-40-10H1A": "SEP 4.3",
+    "GLS-720-20011-16-25-10H1A": "SEP 4.3",
+    "GN2-720-20012-1-80-25H1A": "I",
+    "GN2-720-20012-2-80-25H1A": "I",
+    "GN2-720-20012-3-40-25H1A": "SEP 4.3/I",
+    "GN2-720-20012-4-40-25H1A": "SEP 4.3/I",
+    "GN2-720-20012-5-50-25H1A": "SEP 4.3/I",
+    "GN2-720-20012-7-40-25H1A": "SEP 4.3/I",
+    "GN2-720-20012-8-15-25H1A": "SEP 4.3/I",
+    "H2SO4-720-20003-1-80-10H2A": "SEP 4.3",
+    "K(GA)-720-20152-5-50-10H1A": "SEP 4.3",
+    "K(GA)-720-20152-6-50-10H1A": "SEP 4.3",
+    "K(GA)-720-20153-1-50-10H1A": "SEP 4.3",
+    "K(GA)-720-20153-2-50-10H1A": "SEP 4.3",
+    "K(GA)-720-20154-1-50-10H1A": "SEP 4.3",
+    "K(GA)-720-20155-1-100-10H1A": "SEP 4.3",
+    "K(GA)-720-20155-2-50-10H1A": "SEP 4.3",
+    "K(GA)-720-20155-3-100-10H1A": "SEP 4.3",
+    "K(GA)-720-20155-4-20-10H1A": "SEP 4.3",
+    "K(GA)-720-20183-1-100-10H1A": "SEP 4.3",
+    "K(GR)-720-20015-1-50-10H2A": "SEP 4.3",
+    "K(GR)-720-20015-2-50-10H2A": "SEP 4.3",
+    "K(GR)-720-20015-3-50-10H2A": "SEP 4.3",
+    "KF-720-20016-6-25-10H1A": "SEP 4.3",
+    "KF-720-20016-8-25-10H1A": "SEP 4.3",
+    "KF-720-20016-10-25-10H1A": "SEP 4.3",
+    "KF-720-20016-12-25-10H1A": "SEP 4.3",
+    "KF-720-20016-14-25-10H1A": "SEP 4.3",
+    "KF-720-20016-16-25-10H1A": "SEP 4.3",
+    "KF-720-20016-18-25-10H1A": "SEP 4.3",
+    "KF-720-20016-31-25-10H1A": "SEP 4.3",
+    "KF-720-20016-33-25-10H1A": "SEP 4.3",
+    "KF-720-20016-36-25-10H1A": "SEP 4.3",
+    "KF-720-20016-38-25-10H1A": "SEP 4.3",
+    "KF-720-20211-1-100-10H1A": "SEP 4.3",
+    "KY-720-20148-1-80-10H1A": "SEP 4.3",
+    "KY-720-20148-2-50-10H1A": "SEP 4.3",
+    "KY-720-20148-3-25-10H1A": "SEP 4.3",
+    "KY-720-20148-4-50-10H1A": "SEP 4.3",
+    "KY-720-20148-5-25-10H1A": "SEP 4.3",
+    "KY-720-20148-6-25-10H1A": "SEP 4.3",
+    "KY-720-20148-7-25-10H1A": "SEP 4.3",
+    "KY-720-20148-8-40-10H1A": "SEP 4.3",
+    "KY-720-20148-9-40-10H1A": "SEP 4.3",
+    "KY-720-20149-1-50-10H1A": "SEP 4.3",
+    "KY-720-20149-2-50-10H1A": "SEP 4.3",
+    "LIA-720-20014-23-25-10H2A": "SEP 4.3",
+    "LIA-720-20039-1-500-10H1A": "SEP 4.3",
+    "LIA-720-20043-1-100-10H1A": "SEP 4.3",
+    "LIA-720-20044-1-400-10H1A": "SEP 4.3",
+    "LIA-720-20044-2-50-10H1A": "SEP 4.3",
+    "LIA-720-20044-3-400-10H1A": "SEP 4.3",
+    "LIA-720-20044-4-250-10H1A": "SEP 4.3",
+    "LIA-720-20044-5-25-10H1A": "SEP 4.3",
+    "LIA-720-20045-1-250-10H1A": "SEP 4.3",
+    "LIA-720-20045-2-50-10H1A": "SEP 4.3",
+    "LIA-720-20047-1-25-10H1A": "SEP 4.3",
+    "LIA-720-20047-2-80-10H1A": "SEP 4.3",
+    "LIA-720-20050-1-500-10H1A": "SEP 4.3",
+    "LIA-720-20051-1-100-10H1A": "SEP 4.3",
+    "LIA-720-20052-1-400-10H1A": "SEP 4.3",
+    "LIA-720-20052-2-50-10H1A": "",
+    "LIA-720-20052-3-300-16H1A": "SEP 4.3",
+    "LIA-720-20052-4-50-10H1A": "SEP 4.3",
+    "LIA-720-20052-5-300-16H1A": "SEP 4.3",
+    "LIA-720-20052-7-200-16H1A": "SEP 4.3",
+    "LIA-720-20052-10-300-16H1A": "SEP 4.3",
+    "LIA-720-20052-11-25-10H1A": "SEP 4.3",
+    "LIA-720-20052-12-200-16H1A": "SEP 4.3",
+    "LIA-720-20052-13-25-16H2A": "SEP 4.3",
+    "LIA-720-20053-1-700-10H1A": "SEP 4.3",
+    "LIA-720-20056-1-100-10H1A": "SEP 4.3",
+    "LIA-720-20056-2-100-10H1A": "SEP 4.3",
+    "LIA-720-20063-1-150-10H1A": "SEP 4.3",
+    "LIA-720-20064-1-150-10H1A": "SEP 4.3",
+    "LIA-720-20131-1-150-10H1A": "SEP 4.3",
+    "LIA-720-20133-1-150-10H1A": "SEP 4.3",
+    "LIA-720-20133-2-50-10H1A": "SEP 4.3",
+    "LIA-720-20133-3-150-10H1A": "SEP 4.3",
+    "LIA-720-20134-1-25-10H1A": "SEP 4.3",
+    "LIA-720-20184-1-125-10H1A": "SEP 4.3",
+    "LIA-720-20197-1-50-10H1A": "SEP 4.3",
+    "LIA-720-20205-1-50-10H1A": "SEP 4.3",
+    "LIS-720-20014-16-25-10H4A": "SEP 4.3",
+    "LIS-720-20068-1-250-10H2A": "SEP 4.3",
+    "LIS-720-20069-1-250-10H4A": "SEP 4.3",
+    "LIS-720-20069-2-50-10H2A": "SEP 4.3",
+    "LIS-720-20069-3-200-10H4A": "SEP 4.3",
+    "LIS-720-20069-4-150-10H4A": "SEP 4.3",
+    "LIS-720-20069-5-200-10H2A": "SEP 4.3",
+    "LIS-720-20069-6-50-10H2A": "SEP 4.3",
+    "LIS-720-20069-7-25-10H4A": "SEP 4.3",
+    "LIS-720-20069-8-25-10H4A": "SEP 4.3",
+    "LIS-720-20069-9-25-10H2A": "SEP 4.3",
+    "LIS-720-20072-1-100-10H2A": "SEP 4.3",
+    "LIS-720-20073-1-150-10H2A": "SEP 4.3",
+    "LIS-720-20094-1-350-10H2A": "SEP 4.3",
+    "LIS-720-20095-1-100-10H2A": "SEP 4.3",
+    "LIS-720-20096-1-100-10H2A": "SEP 4.3",
+    "LIS-720-20097-1-400-10H2A": "SEP 4.3",
+    "LIS-720-20097-2-50-10H2A": "SEP 4.3",
+    "LIS-720-20097-3-300-16H2A": "SEP 4.3",
+    "LIS-720-20097-4-300-16H2A": "SEP 4.3",
+    "LIS-720-20097-6-200-16H2A": "SEP 4.3",
+    "LIS-720-20097-9-300-16H2A": "SEP 4.3",
+    "LIS-720-20097-10-25-10H2A": "SEP 4.3",
+    "LIS-720-20097-11-200-16H2A": "SEP 4.3",
+    "LIS-720-20097-12-25-16H2A": "SEP 4.3",
+    "LIS-720-20098-4-500-10H2A": "SEP 4.3",
+    "LIS-720-20100-1-100-10H2A": "SEP 4.3",
+    "LIS-720-20100-2-100-10H2A": "SEP 4.3",
+    "LIS-720-20136-1-150-10H2A": "SEP 4.3",
+    "LIS-720-20139-1-150-10H2A": "SEP 4.3",
+    "LIS-720-20139-2-50-10H2A": "SEP 4.3",
+    "LIS-720-20139-3-150-10H2A": "SEP 4.3",
+    "LIS-720-20140-1-25-10H2A": "SEP 4.3",
+    "LIS-720-20185-1-125-10H2A": "SEP 4.3",
+    "LIS-720-20191-1-50-10H2A": "SEP 4.3",
+    "LIS-720-20195-1-50-10H2A": "SEP 4.3",
+    "LMF-720-20027-1-200-16H1A": "SEP 4.3",
+    "LMF-720-20027-2-25-10H1A": "SEP 4.3",
+    "LMF-720-20027-3-50-10H1A": "SEP 4.3",
+    "LMF-720-20027-4-50-10H1A": "SEP 4.3",
+    "LMF-720-20037-1-25-10H1A": "SEP 4.3",
+    "LMF-720-20053-2-700-10H1A": "SEP 4.3",
+    "LMF-720-20053-3-25-10H1A": "SEP 4.3",
+    "LMF-720-20060-1-1000-10H1A": "SEP 4.3",
+    "LMF-720-20061-1-300-10H1A": "SEP 4.3",
+    "LMF-720-20061-2-50-10H1A": "SEP 4.3",
+    "LMF-720-20061-3-200-16H1A": "SEP 4.3",
+    "LMF-720-20061-4-25-16H1A": "SEP 4.3",
+    "LMF-720-20061-5-200-16H1A": "SEP 4.3",
+    "LMF-720-20062-1-100-10H1A": "SEP 4.3",
+    "LMF-720-20082-2-250-10H1A": "SEP 4.3",
+    "LMF-720-20084-2-250-10H1A": "SEP 4.3",
+    "LMF-720-20085-1-200-10H1A": "SEP 4.3",
+    "LMF-720-20193-1-50-10H1A": "SEP 4.3",
+    "LMF-720-20203-1-50-10H1A": "SEP 4.3",
+    "LMF-720-20222-1-80-10H1A": "SEP 4.3",
+    "LMS-720-20000-1-200-10H1A": "SEP 4.3",
+    "LMS-720-20000-2-200-10H1A": "SEP 4.3",
+    "LMS-720-20000-3-50-10H1A": "SEP 4.3",
+    "LMS-720-20003-2-200-10H1A": "SEP 4.3",
+    "LMS-720-20023-1-200-10H1A": "SEP 4.3",
+    "LMS-720-20025-1-200-10H1A": "SEP 4.3",
+    "LMS-720-20025-2-25-10H1A": "SEP 4.3",
+    "LMS-720-20029-1-250-10H1A": "SEP 4.3",
+    "LMS-720-20031-1-100-10H1A": "SEP 4.3",
+    "LMS-720-20033-1-500-10H1A": "SEP 4.3",
+    "LMS-720-20033-2-400-10H1A": "SEP 4.3",
+    "LMS-720-20033-3-50-10H1A": "SEP 4.3",
+    "LMS-720-20033-4-50-10H1A": "SEP 4.3",
+    "LMS-720-20034-1-80-10H1A": "SEP 4.3",
+    "LMS-720-20035-1-25-10H1A": "SEP 4.3",
+    "LMS-720-20036-1-25-10H1A": "SEP 4.3",
+    "LMS-720-20190-1-50-10H1A": "SEP 4.3",
+    "LMS-720-20202-1-50-10H1A": "SEP 4.3",
+    "LMS-720-20202-2-50-10H1A": "SEP 4.3",
+    "LMS-720-20204-1-50-10H1A": "SEP 4.3",
+    "LMS-720-20206-1-100-10H1A": "SEP 4.3",
+    "LMS-720-20207-1-80-10H1A": "SEP 4.3",
+    "LTF2-720-20098-3-200-10H1A": "SEP 4.3",
+    "LTF2-720-20098-6-200-10H2A": "SEP 4.3",
+    "LTF2-720-20110-1-250-10H1A": "SEP 4.3",
+    "LTF2-720-20111-1-100-10H1A": "SEP 4.3",
+    "LTF2-720-20112-1-250-10H1A": "SEP 4.3",
+    "LTF2-720-20112-2-50-10H1A": "SEP 4.3",
+    "LTF2-720-20112-3-200-16H1A": "SEP 4.3",
+    "LTF-720-20098-1-500-10H2A": "SEP 4.3",
+    "LTF-720-20098-2-500-10H2A": "SEP 4.3",
+    "LTF-720-20098-5-25-10H2A": "SEP 4.3",
+    "LTF-720-20103-1-600-10H2A": "SEP 4.3",
+    "LTF-720-20104-1-100-10H2A": "SEP 4.3",
+    "LTF-720-20106-1-150-10H2A": "SEP 4.3",
+    "LTF-720-20106-2-50-10H2A": "SEP 4.3",
+    "LTF-720-20106-3-100-10H2A": "SEP 4.3",
+    "LTF-720-20106-4-25-10H2A": "SEP 4.3",
+    "LTF-720-20107-1-150-10H2A": "SEP 4.3",
+    "LTF-720-20120-2-250-10H2A": "SEP 4.3",
+    "LTF-720-20121-2-250-10H2A": "SEP 4.3",
+    "LTF-720-20122-1-200-10H2A": "SEP 4.3",
+    "LTF-720-20194-1-50-10H2A": "SEP 4.3",
+    "LTF-720-20196-1-50-10H2A": "SEP 4.3",
+    "NaOH10-720-20002-1-50-10H2A": "SEP 4.3",
+    "NaOH10-720-20002-2-50-10H2A": "SEP 4.3",
+    "NaOH10-720-20002-3-50-10H2A": "SEP 4.3",
+    "NaOH10-720-20002-4-25-10H2A": "SEP 4.3",
+    "NaOH10-720-20002-5-50-10H2A": "SEP 4.3",
+    "TÖ-720-20182-1-20-10H1A": "SEP 4.3",
+    "TÖ-720-20182-2-20-10H1A": "SEP 4.3",
+    "TÖ-720-20228-1-50-10H2A": "SEP 4.3",
+    "VHM-720-20009-1-100-10H2A": "SEP 4.3",
+    "VHM-720-20009-3-50-10H2A": "SEP 4.3",
+    "VHM-720-20009-4-100-10H2A": "SEP 4.3",
+    "VKD-720-20006-1-50-10H1A": "SEP 4.3",
+    "VKD-720-20006-4-50-10H1A": "SEP 4.3",
+    "VKDN-720-20006-3-50-16H1A": "SEP 4.3",
+    "VKDN-720-20006-5-50-10H1A": "SEP 4.3",
+    "VKDN-720-20017-1-25-10H1A": "SEP 4.3",
+    "VKDN-720-20018-1-40-10H1A": "SEP 4.3",
+    "VKDN-720-20047-3-50-10H1A": "SEP 4.3",
+    "VKDN-720-20142-1-50-16H1A": "SEP 4.3",
+    "VKDN-720-20142-2-25-16H1A": "SEP 4.3",
+    "VKDN-720-20142-3-25-16H1A": "SEP 4.3",
+    "VKDN-720-20143-1-50-16H1A": "SEP 4.3",
+    "VKDN-720-20143-2-25-16H1A": "SEP 4.3",
+    "VKDN-720-20143-3-15-16H1A": "SEP 4.3",
+    "VKDN-720-20144-1-50-16H1A": "SEP 4.3",
+    "VKDN-720-20144-3-25-16H1A": "SEP 4.3",
+    "VKDN-720-20144-5-15-16H1A": "SEP 4.3",
+    "VKDN-720-20144-6-25-16H1A": "SEP 4.3",
+    "VKDN-720-20144-8-15-16H1A": "SEP 4.3",
+    "VKDN-720-20144-9-25-16H1A": "SEP 4.3",
+    "VKDN-720-20144-11-15-16H1A": "SEP 4.3",
+    "VKDN-720-20144-12-25-16H1A": "SEP 4.3",
+    "VKDN-720-20144-14-15-16H1A": "SEP 4.3",
+    "VKDN-720-20144-15-25-16H1A": "SEP 4.3",
+    "VKDN-720-20144-17-15-16H1A": "SEP 4.3",
+    "VKDN-720-20144-18-25-16H1A": "SEP 4.3",
+    "VKDN-720-20144-20-15-16H1A": "SEP 4.3",
+    "VKDN-720-20144-21-25-16H1A": "SEP 4.3",
+    "VKDN-720-20144-23-15-16H1A": "SEP 4.3",
+    "VKDN-720-20144-24-25-16H1A": "SEP 4.3",
+    "VKDN-720-20144-26-15-16H1A": "SEP 4.3",
+    "VKDN-720-20144-29-25-16H1A": "SEP 4.3",
+    "VKDN-720-20144-30-15-16H1A": "SEP 4.3",
+    "VKDN-720-20144-31-25-16H1A": "SEP 4.3",
+    "VKDN-720-20144-32-15-16H1A": "SEP 4.3",
+    "VKDN-720-20144-33-25-16H1A": "SEP 4.3",
+    "VKDN-720-20144-34-15-16H1A": "SEP 4.3",
+    "VKDN-720-20144-35-25-16H1A": "SEP 4.3",
+    "VKDN-720-20144-36-15-16H1A": "SEP 4.3",
+    "VKDN-720-20144-37-25-16H1A": "SEP 4.3",
+    "VKDN-720-20144-38-50-16H1A": "SEP 4.3",
+    "VKDN-720-20144-39-25-16H1A": "SEP 4.3",
+    "VKDN-720-20144-40-15-16H1A": "SEP 4.3",
+    "VKDN-720-20144-41-25-16H1A": "SEP 4.3",
+    "VKDN-720-20144-42-15-16H1A": "SEP 4.3",
+    "VKDN-720-20145-8-40-16H1A": "SEP 4.3",
+    "VKDN-720-20145-12-25-16H1A": "SEP 4.3",
+    "VKDN-720-20146-1-50-16H1A": "SEP 4.3",
+    "VKDN-720-20146-2-25-16H1A": "SEP 4.3",
+    "VKDN-720-20146-3-25-16H1A": "SEP 4.3",
+    "VKDN-720-20198-2-50-10H1A": "SEP 4.3",
+    "VKDN-720-20199-1-50-10H1A": "SEP 4.3",
+    "VKDN-720-20199-2-50-10H1A": "SEP 4.3",
+    "VKDN-720-20200-1-50-10H1A": "SEP 4.3",
+    "VKDN-720-20200-2-50-10H1A": "SEP 4.3",
+    "VKDN-720-20200-3-50-10H1A": "SEP 4.3",
+    "VKDN-720-20200-4-50-10H1A": "SEP 4.3",
+    "VKDN-720-20201-1-50-10H1A": "SEP 4.3",
+    "VKDN-720-20212-1-50-10H1A": "SEP 4.3",
+    "VKM-720-20005-1-400-10H2A": "SEP 4.3",
+    "VKM-720-20005-2-300-10H2A": "SEP 4.3",
+    "VKM-720-20005-3-250-10H2A": "SEP 4.3",
+    "VKM-720-20005-4-80-10H2A": "SEP 4.3",
+    "VKM-720-20005-5-50-10H2A": "SEP 4.3",
+    "VKM-720-20005-6-25-10H2A": "SEP 4.3",
+    "VKM-720-20005-7-50-10H2A": "SEP 4.3",
+    "VKM-720-20005-8-250-10H2A": "SEP 4.3",
+    "VKM-720-20005-9-150-10H2A": "SEP 4.3",
+    "VKM-720-20005-11-100-10H2A": "SEP 4.3",
+    "VKM-720-20005-13-25-10H2A": "SEP 4.3",
+    "VKM-720-20005-16-25-10H2A": "SEP 4.3",
+    "VKM-720-20005-17-25-10H2A": "SEP 4.3",
+    "VKM-720-20005-18-25-10H2A": "SEP 4.3",
+    "VKM-720-20005-19-20-10H2A": "SEP 4.3",
+    "VKM-720-20005-20-50-10H2A": "SEP 4.3",
+    "VKM-720-20005-21-15-10H2A": "SEP 4.3",
+    "VKM-720-20005-22-15-10H2A": "SEP 4.3",
+    "VKM-720-20005-23-25-10H2A": "SEP 4.3",
+    "VKM-720-20005-24-50-10H2A": "SEP 4.3",
+    "VKM-720-20005-29-25-10H2A": "SEP 4.3",
+    "VKM-720-20067-1-150-10H2A": "SEP 4.3",
+    "VKM-720-20186-1-25-10H2A": "SEP 4.3",
+    "VKM-720-20218-1-15-10H2A": "SEP 4.3",
+    "VKM-720-20223-1-15-10H2A": "SEP 4.3",
+    "VKM-720-20224-1-15-10H2A": "SEP 4.3",
+    "VKS-720-20007-1-80-25H1A": "SEP 4.3",
+    "VKS-720-20007-2-80-25H1A": "SEP 4.3",
+    "VKS-720-20007-3-80-25H1A": "SEP 4.3",
+    "VKS-720-20007-4-80-25H1A": "SEP 4.3",
+    "VKS-720-20007-5-80-25H1A": "SEP 4.3",
+    "VKS-720-20007-6-80-25H1A": "SEP 4.3",
+    "VKS-720-20007-7-80-25H1A": "SEP 4.3",
+    "VKS-720-20007-8-80-25H1A": "SEP 4.3",
+    "VKS-720-20007-9-80-25H1A": "SEP 4.3",
+    "VKS-720-20007-10-50-25H1A": "SEP 4.3",
+    "VKS-720-20007-15-50-25H1A": "SEP 4.3",
+    "VKS-720-20007-15-80-25H1A": "SEP 4.3",
+    "VKS-720-20007-18-50-25H1A": "SEP 4.3",
+    "VKS-720-20007-18-80-25H1A": "SEP 4.3",
+    "VKS-720-20007-21-80-25H1A": "SEP 4.3",
+    "VKS-720-20213-1-100-25H1A": "SEP 4.3",
+    "VKS-720-20213-2-80-25H1A": "SEP 4.3",
+    "VKS-720-20213-3-80-25H1A": "SEP 4.3",
+    "VKS-720-20213-4-80-25H1A": "SEP 4.3",
+    "VKS-720-20213-5-80-25H1A": "SEP 4.3",
+    "VKS-720-20213-6-80-25H1A": "SEP 4.3",
+    "VKT-720-20010-1-80-10H2A": "SEP 4.3",
+    "VKT-720-20010-2-25-10H2A": "SEP 4.3",
+    "VKT-720-20010-3-50-10H2A": "SEP 4.3",
+    "VKT-720-20010-5-50-10H2A": "SEP 4.3",
+    "VKT-720-20024-1-100-10H2A": "SEP 4.3",
+    "VKT-720-20024-2-100-10H2A": "SEP 4.3",
+    "VKT-720-20024-3-50-10H2A": "SEP 4.3",
+    "VKT-720-20028-1-100-10H2A": "SEP 4.3",
+    "VKT-720-20028-2-40-10H2A": "SEP 4.3",
+    "VKT-720-20028-3-25-10H2A": "SEP 4.3",
+    "VKT-720-20074-1-50-10H2A": "SEP 4.3",
+    "VKT-720-20075-1-40-10H2A": "SEP 4.3",
+    "VKT-720-20076-4-40-160H2A": "SEP 4.3",
+    "VKT-720-20076-5-40-160H2A": "SEP 4.3",
+    "VKT-720-20076-6-40-160H2A": "SEP 4.3",
+    "VKT-720-20076-7-25-10H2A": "SEP 4.3",
+    "VKT-720-20076-8-25-10H2A": "SEP 4.3",
+    "VKT-720-20076-9-50-10H2A": "SEP 4.3",
+    "VKT-720-20076-10-25-10H2A": "SEP 4.3",
+    "VKT-720-20217-1-15-10H2A": "SEP 4.3",
+    "VKT-720-20217-2-50-10H2A": "SEP 4.3",
+    "VKT-720-20219-1-15-10H2A": "SEP 4.3",
+    "VKT-720-20220-1-15-10H2A": "SEP 4.3",
+    "VKT-720-20227-1-50-10H2A": "SEP 4.3",
+    "VT-720-20008-1-80-10H1A": "SEP 4.3",
+    "VT-720-20008-2-25-10H1A": "SEP 4.3",
+    "VT-720-20008-3-50-10H1A": "SEP 4.3",
+    "VT-720-20008-4-50-10H1A": "SEP 4.3",
+    "VT-720-20008-7-15-10H1A": "SEP 4.3",
+    "VT-720-20008-8-15-10H1A": "SEP 4.3",
+    "VT-720-20008-9-15-10H1A": "SEP 4.3",
+    "VT-720-20008-10-15-10H1A": "SEP 4.3",
+    "VT-720-20008-11-15-10H1A": "SEP 4.3",
+    "VT-720-20008-12-15-10H1A": "SEP 4.3",
+    "VT-720-20008-13-15-10H1A": "SEP 4.3",
+    "VT-720-20008-14-15-10H1A": "SEP 4.3",
+    "VT-720-20008-15-15-10H1A": "SEP 4.3",
+    "VT-720-20008-16-15-10H1A": "SEP 4.3",
+    "VT-720-20008-17-15-10H1A": "SEP 4.3",
+    "VT-720-20008-18-15-10H1A": "SEP 4.3",
+    "VT-720-20008-19-15-10H1A": "SEP 4.3",
+    "VT-720-20008-20-15-10H1A": "SEP 4.3",
+    "VT-720-20008-21-15-10H1A": "SEP 4.3",
+    "VT-720-20008-22-15-10H1A": "SEP 4.3",
+    "VT-720-20008-23-15-10H1A": "SEP 4.3",
+    "VT-720-20008-25-15-10H1A": "SEP 4.3",
+    "VT-720-20008-30-15-10H1A": "SEP 4.3",
+    "VT-720-20008-31-15-10H1A": "SEP 4.3",
+    "VT-720-20008-34-15-10H1A": "SEP 4.3",
+    "VVF-720-20013-1-80-16C1B": "SEP 4.3",
+    "VVF-720-20161-1-80-16C1B": "SEP 4.3",
+    "VVG-720-20156-2-25-16H1A": "SEP 4.3",
+    "VVG-720-20156-3-25-16H1A": "SEP 4.3",
+    "VVM-720-20141-2-400-10H2A": "SEP 4.3",
+    "VVM-720-20141-1-300-10H2A": "SEP 4.3",
+    "VVM-720-20046-1-250-10H2A": "SEP 4.3",
+    "VVM-720-20014-24-25-10H4A": "SEP 4.3",
+    "VVM-720-20215-5-50-10H2A": "SEP 4.3",
+    "VVM-720-20127-1-150-10H2A": "SEP 4.3",
+    "GAL-720-20065-1-200-10H2A": "SEP 4.3",
+    "GAL-720-20066-1-250-10H2A": "II",
+    "VVM-720-20125-7-50-10H2A": "SEP 4.3",
+    "GAL-720-20066-3-150-10H2A": "II",
+    "GAL-720-20147-1-350-16H2A": "II",
+    "GAL-720-20147-2-150-10H2A": "II",
+    "K(GA)-720-20153-3-50-10H1A": "SEP 4.3",
+    "VVG-720-20157-1-80-16H1A": "SEP 4.3",
+    "VVG-720-20157-2-80-16H1A": "SEP 4.3",
+    "VVG-720-20157-3-80-16H1A": "SEP 4.3",
+    "VVG-720-20157-4-25-16H1A": "SEP 4.3",
+    "VVG-720-20157-5-25-16H1A": "SEP 4.3",
+    "VVG-720-20157-6-80-16H1A": "SEP 4.3",
+    "VVG-720-20157-7-80-16H1A": "SEP 4.3",
+    "VVG-720-20157-9-25-16H1A": "SEP 4.3",
+    "VVG-720-20157-10-25-16H1A": "SEP 4.3",
+    "VVG-720-20158-1-25-16H1A": "SEP 4.3",
+    "VVG-720-20158-2-50-16H1A": "SEP 4.3",
+    "VVG-720-20159-1-25-16H1A": "SEP 4.3",
+    "VVG-720-20160-1-80-16H1A": "SEP 4.3",
+    "VVG-720-20160-2-25-16H1A": "SEP 4.3",
+    "VVG-720-20160-3-50-16H1A": "SEP 4.3",
+    "VVG-720-20163-1-80-16H1A": "SEP 4.3",
+    "VVG-720-20163-2-80-16H1A": "SEP 4.3",
+    "VVG-720-20164-1-25-16H1A": "SEP 4.3",
+    "VVG-720-20165-2-50-16H1A": "SEP 4.3",
+    "VVG-720-20166-1-25-16H1A": "SEP 4.3",
+    "VVG-720-20166-2-25-16H1A": "SEP 4.3",
+    "VVG-720-20167-1-25-16H1A": "SEP 4.3",
+    "VVG-720-20167-2-25-16H1A": "SEP 4.3",
+    "VVG-720-20168-1-25-16H1A": "SEP 4.3",
+    "VVG-720-20208-1-15-16H1A": "SEP 4.3",
+    "VVG-720-20209-1-15-16H1A": "SEP 4.3",
+    "VVM-720-20014-1-100-10H2A": "SEP 4.3",
+    "VVM-720-20014-2-40-10H2A": "SEP 4.3",
+    "VVM-720-20014-3-100-10H2A": "SEP 4.3",
+    "VVG-720-20165-1-25-16H1A": "SEP 4.3",
+    "VVG-720-20169-1-25-16H1A": "SEP 4.3",
+    "VVM-720-20014-4-50-10H2A": "SEP 4.3",
+    "VVM-720-20014-5-25-10H2A": "SEP 4.3",
+    "VVM-720-20014-7-50-10H2A": "SEP 4.3",
+    "VVM-720-20014-8-80-10H2A": "SEP 4.3",
+    "VVM-720-20014-9-50-10H2A": "SEP 4.3",
+    "VVM-720-20014-10-50-10H2A": "SEP 4.3",
+    "VVM-720-20014-11-25-10H2A": "SEP 4.3",
+    "VVM-720-20014-12-25-10H2A": "SEP 4.3",
+    "VVM-720-20014-13-25-10H2A": "SEP 4.3",
+    "VVM-720-20014-15-25-10H2A": "SEP 4.3",
+    "VVM-720-20014-17-25-10H2A": "SEP 4.3",
+    "VVM-720-20014-18-25-10H2A": "SEP 4.3",
+    "VVM-720-20014-19-25-10H2A": "SEP 4.3",
+    "VVM-720-20014-21-25-10H2A": "SEP 4.3",
+    "VVM-720-20014-24-25-10H2A": "SEP 4.3",
+    "VVM-720-20014-30-50-10H2A": "SEP 4.3",
+    "VVM-720-20014-31-15-10H2A": "SEP 4.3",
+    "VVM-720-20014-32-15-10H2A": "SEP 4.3",
+    "VVM-720-20014-33-15-10H2A": "SEP 4.3",
+    "VVM-720-20014-34-15-10H2A": "SEP 4.3",
+    "VVM-720-20014-35-15-10H2A": "SEP 4.3",
+    "VVM-720-20014-36-15-10H2A": "SEP 4.3",
+    "VVM-720-20014-37-15-10H2A": "SEP 4.3",
+    "VVM-720-20014-38-15-10H2A": "SEP 4.3",
+    "VVM-720-20014-39-15-10H2A": "SEP 4.3",
+    "VVM-720-20014-41-25-10H2A": "SEP 4.3",
+    "VVM-720-20014-45-25-10H2A": "SEP 4.3",
+    "VVM-720-20014-46-25-10H2A": "SEP 4.3",
+    "VVM-720-20014-47-15-10H2A": "SEP 4.3",
+    "VVM-720-20014-48-15-10H2A": "SEP 4.3",
+    "VVM-720-20014-49-15-10H2A": "SEP 4.3",
+    "VVM-720-20014-50-25-10H2A": "SEP 4.3",
+    "VVM-720-20014-51-25-10H2A": "SEP 4.3",
+    "VVM-720-20014-52-25-10H2A": "SEP 4.3",
+    "VVM-720-20014-53-25-10H2A": "SEP 4.3",
+    "VVM-720-20014-54-15-10H2A": "SEP 4.3",
+    "VVM-720-20014-55-15-10H2A": "SEP 4.3",
+    "VVM-720-20014-56-15-10H2A": "SEP 4.3",
+    "VVM-720-20014-57-15-10H2A": "SEP 4.3",
+    "VVM-720-20019-1-250-10H2A": "SEP 4.3",
+    "VVM-720-20026-1-150-10H2A": "SEP 4.3",
+    "VVM-720-20026-2-25-10H2A": "SEP 4.3",
+    "VVM-720-20042-2-15-10H2A": "SEP 4.3",
+    "VVM-720-20046-2-25-10H2A": "SEP 4.3",
+    "VVM-720-20046-3-50-10H2A": "SEP 4.3",
+    "VVM-720-20046-4-50-10H2A": "SEP 4.3",
+    "VVM-720-20055-1-25-10H2A": "SEP 4.3",
+    "VVM-720-20059-2-15-10H2A": "SEP 4.3",
+    "VVM-720-20089-1-40-10H2A": "SEP 4.3",
+    "VVM-720-20090-1-50-10H2A": "SEP 4.3",
+    "VVM-720-20091-2-50-25H2A": "SEP 4.3",
+    "VVM-720-20091-3-50-16H2A": "SEP 4.3",
+    "VVM-720-20091-9-25-16H2A": "SEP 4.3",
+    "VVM-720-20091-10-25-16H2A": "SEP 4.3",
+    "VVM-720-20099-1-25-10H2A": "SEP 4.3",
+    "VVM-720-20123-1-40-10H2A": "SEP 4.3",
+    "VM-720-20124-1-50-10H2A": "SEP 4.3",
+    "VVM-720-20125-8-50-25H2A": "SEP 4.3",
+    "VVM-720-20128-1-200-10H2A": "SEP 4.3",
+    "VVM-720-20128-2-50-10H2A": "SEP 4.3",
+    "VVM-720-20128-4-50-16H2A": "SEP 4.3",
+    "VVM-720-20128-6-50-10H2A": "SEP 4.3",
+    "VVM-720-20128-8-150-16H2A": "SEP 4.3",
+    "VVM-720-20128-9-100-16H2A": "SEP 4.3",
+    "VVM-720-20128-11-100-16H2A": "SEP 4.3",
+    "VVM-720-20130-1-25-10H2A": "SEP 4.3",
+    "VVM-720-20130-3-25-10H2A": "SEP 4.3",
+    "VVM-720-20150-1-50-10H2A": "SEP 4.3",
+    "VVM-720-20150-2-25-10H2A": "SEP 4.3",
+    "VVM-720-20187-1-25-10H2A": "SEP 4.3",
+    "VVM-720-20188-1-25-10H2A": "SEP 4.3",
+    "VVM-720-20210-1-25-10H2A": "SEP 4.3",
+    "VVM-720-20214-1-50-10H2A": "SEP 4.3",
+    "VVM-720-20214-5-50-10H2A": "SEP 4.3",
+    "VVM-720-20215-1-50-10H2A": "SEP 4.3",
+    "VVM-720-20216-1-25-10H2A": "SEP 4.3",
+    "VVM-720-20221-1-80-10H2A": "SEP 4.3",
+    "VVM-720-20225-1-80-10H2A": "SEP 4.3",
+    "VVM-720-20226-1-50-10H2A": "SEP 4.3",
+    "VKDN-720-20198-3-50-10H1A": "SEP 4.3",
+    "VKDN-720-20198-1-50-10H1A": "SEP 4.3",
+    "VKM-720-20005-31-10H2A": "",
+    "VKM-720-20005-31-25-10H2A": "SEP 4.3",
+    "VVM-720-20014-59-25-10H2A": "SEP 4.3",
+    "VVM-720-20126-1-100-10H2A": "SEP 4.3",
+    "VVM-720-20014-58-25-10H2A": "SEP 4.3"
+  },
+  "DRY": {
+    "ÅL3-720-20016-19-200-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-20-40-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-21-25-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-22-25-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-23-25-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-25-25-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-26-25-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-27-25-10C1B": "SEP 4.3",
+    "ÅL3-720-20016-28-25-10C1B": "SEP 4.3",
+    "ÅL3-721-20010-1-100-10C1B": "SEP 4.3",
+    "ÅL3-721-20012-1-50-10C1B": "SEP 4.3",
+    "ÅL3-721-20039-3-25-10C1B": "SEP 4.3",
+    "ÅM11-721-20001-1-150-25C1B": "I",
+    "ÅM11-721-20001-2-40-25C1B": "I",
+    "ÅM11-721-20001-3-25-25C1B": "I/SEP 4.3",
+    "ÅM11-721-20001-4-25-25C1B": "I",
+    "ÅM11-721-20001-5-25-25C1B": "I",
+    "ÅM11-721-20001-7-25-25C1B": "I/SEP 4.3",
+    "ÅM11-721-20001-8-25-25C1B": "I",
+    "ÅM11-721-20001-9-25-25C1B": "SEP 4.3",
+    "ÅM11-721-20001-10-25-25C1B": "SEP 4.3",
+    "ÅM11-721-20001-11-25-25C1B": "SEP 4.3",
+    "ÅM11-721-20001-12-25-25C1B": "SEP 4.3",
+    "ÅM11-721-20013-1-50-25C1B": "SEP 4.3",
+    "ÅM11-721-20016-1-100-25C1B": "SEP 4.3",
+    "ÅM11-721-20038-1-25-25C1B": "SEP 4.3",
+    "GLP-720-20004-14-40-10H1A": "SEP 4.3",
+    "GLP-720-20004-15-40-10H1A": "SEP 4.3",
+    "GLP-720-20004-16-40-10H1A": "SEP 4.3",
+    "GLP-721-20029-1-40-10H1A": "SEP 4.3",
+    "GLP-721-20042-1-40-10H1A": "SEP 4.3",
+    "GLS-720-20011-12-40-10H1A": "SEP 4.3",
+    "GLS-720-20011-13-25-10H1A": "SEP 4.3",
+    "GLS-720-20011-13-40-10H1A": "SEP 4.3",
+    "GLS-721-20002-1-40-10H1A": "SEP 4.3",
+    "GLS-721-20043-1-40-10H1A": "SEP 4.3",
+    "GN2-721-20015-1-100-25H1A": "SEP 4.3/I",
+    "GN2-721-20015-3-50-25H1A": "I",
+    "GN2-721-20015-5-50-25H1A": "SEP 4.3/I",
+    "GN2-721-20015-10-80-25H1A": "SEP 4.3",
+    "GN2-721-20015-11-25-25H1A": "SEP 4.3",
+    "GN2-721-20019-1-80-25H1A": "I",
+    "GN2-721-20019-5-40-25H1A": "I",
+    "GN2-721-20019-6-40-25H1A": "SEP 4.3/I",
+    "GN2-721-20019-7-25-25H1A": "SEP 4.3/I",
+    "GN2-721-20019-8-25-25H1A": "SEP 4.3/I",
+    "GN2-721-20019-12-25-25H1A": "SEP 4.3/I",
+    "GN2-721-20019-30-25-25H1A": "SEP 4.3/I",
+    "GN2-721-20019-31-25-25H1A": "SEP 4.3/I",
+    "GN2-721-20019-33-25-25H1A": "SEP 4.3/I",
+    "GN2-721-20019-34-25-25H1A": "SEP 4.3/I",
+    "GN2-721-20069-1-50-25H1A": "I",
+    "GN2-721-20069-1-80-25H1A": "I",
+    "GN2-721-20069-2-25-25H1A": "SEP 4.3/I",
+    "GN2-721-20069-3-25-25H1A": "SEP 4.3/I",
+    "GN2-721-20069-4-80-25H1A": "I",
+    "GN2-721-20069-5-50-25H1A": "SEP 4.3/I",
+    "GN2-721-20069-6-25-25H1A": "SEP 4.3/I",
+    "GN2-721-20069-7-80-10H1A": "I",
+    "GN2-721-20069-8-80-10H1A": "I",
+    "GN2-721-20069-10-50-10H1A": "SEP 4.3",
+    "GN2-721-20071-1-80-10H1A": "SEP 4.3",
+    "GN2-721-20072-1-20-10H1A": "SEP 4.3",
+    "GN2-721-20075-1-15-10H1A": "SEP 4.3",
+    "GN2-721-20076-1-100-10H1A": "SEP 4.3",
+    "GN2-721-20077-1-50-10H1A": "SEP 4.3",
+    "GN2-721-20078-1-50-10H1A": "SEP 4.3",
+    "K(GR)-721-20005-1-50-10H2A": "SEP 4.3",
+    "K(GR)-721-20005-2-40-10H2A": "SEP 4.3",
+    "K(GR)-721-20005-3-50-10H2A": "SEP 4.3",
+    "K(GR)-721-20005-4-25-10H2A": "SEP 4.3",
+    "K(GR)-721-20005-5-25-10H2A": "SEP 4.3",
+    "K(GR)-721-20005-6-25-10H2A": "SEP 4.3",
+    "K(GR)-721-20005-7-25-10H2A": "SEP 4.3",
+    "K(GR)-721-20014-1-40-10H2A": "SEP 4.3",
+    "K(GR)-721-20057-1-25-10H1A": "SEP 4.3",
+    "KF-721-20004-1-50-10H1A": "SEP 4.3",
+    "KF-721-20004-2-50-16H1A": "SEP 4.3",
+    "KF-721-20004-3-25-16H1A": "SEP 4.3",
+    "KF-721-20004-4-25-10H1A": "SEP 4.3",
+    "KF-721-20004-5-25-16H1A": "SEP 4.3",
+    "KF-721-20004-6-50-10H1A": "SEP 4.3",
+    "KF-721-20004-7-25-16H1A": "SEP 4.3",
+    "KF-721-20011-1-50-10H1A": "SEP 4.3",
+    "KF-721-20017-1-50-25C1B": "SEP 4.3",
+    "KF-721-20017-2-50-25C1B": "SEP 4.3",
+    "KF-721-20044-1-25-25H1A": "SEP 4.3",
+    "KF-721-20044-2-25-25H1A": "SEP 4.3",
+    "KF-721-20044-3-25-10H1A": "SEP 4.3",
+    "KF-721-20044-4-25-25H1A": "SEP 4.3",
+    "KF-721-20044-5-25-10H1A": "SEP 4.3",
+    "KF-721-20049-1-25-10H1A": "SEP 4.3",
+    "KF-721-20049-2-25-10H1A": "SEP 4.3",
+    "KF-721-20049-3-25-25H1A": "SEP 4.3",
+    "KF-721-20049-4-25-25H1A": "SEP 4.3",
+    "KF-721-20049-5-25-25H1A": "SEP 4.3",
+    "KF-721-20049-6-25-25H1A": "SEP 4.3",
+    "KF-721-20049-7-100-10H1A": "SEP 4.3",
+    "KF-721-20049-8-25-10H1A": "SEP 4.3",
+    "KF-721-20055-1-25-10H1A": "SEP 4.3",
+    "KF-721-20055-2-25-10H1A": "SEP 4.3",
+    "KF-721-20055-3-25-10H1A": "SEP 4.3",
+    "KF-721-20055-4-25-10H1A": "SEP 4.3",
+    "KF-721-20055-5-80-10H1A": "SEP 4.3",
+    "KF-721-20056-1-25-25H1A": "SEP 4.3",
+    "KF-721-20056-2-25-25H1A": "SEP 4.3",
+    "KF-721-20079-1-25-25H1A": "SEP 4.3",
+    "KF-721-20079-2-25-25H1A": "SEP 4.3",
+    "TÖ-721-20028-1-50-10C1B": "SEP 4.3",
+    "VKDN-720-20145-48-25-10H1A": "SEP 4.3",
+    "VKDN-720-20145-49-25-10H1A": "SEP 4.3",
+    "VKM-720-20005-25-250-10H2A": "SEP 4.3",
+    "VKM-720-20005-27-40-10H2A": "SEP 4.3",
+    "VKM-720-20005-28-25-10H2A": "SEP 4.3",
+    "VKM-721-20006-4-25-10H2A": "SEP 4.3",
+    "VKM-721-20080-1-15-10H2A": "SEP 4.3",
+    "VKS-721-20020-1-80-25H1A": "SEP 4.3",
+    "VKS-721-20020-2-40-25H1A": "SEP 4.3",
+    "VKS-721-20020-3-25-25H1A": "SEP 4.3",
+    "VKS-721-20020-4-40-25H1A": "SEP 4.3",
+    "VKS-721-20022-1-80-25H1A": "SEP 4.3",
+    "VKS-721-20022-2-80-25H1A": "SEP 4.3",
+    "VKS-721-20022-3-25-25H1A": "SEP 4.3",
+    "VKS-721-20022-4-40-25H1A": "SEP 4.3",
+    "VKS-721-20022-5-80-25H1A": "SEP 4.3",
+    "VKS-721-20022-6-80-25H1A": "SEP 4.3",
+    "VKS-721-20022-7-25-25H1A": "SEP 4.3",
+    "VKS-721-20022-8-80-25H1A": "SEP 4.3",
+    "VKS-721-20022-9-80-25H1A": "SEP 4.3",
+    "VKS-721-20022-10-80-25H1A": "SEP 4.3",
+    "VKS-721-20022-11-25-25H1A": "SEP 4.3",
+    "VKS-721-20023-1-80-25H1A": "SEP 4.3",
+    "VKS-721-20023-2-25-25H1A": "SEP 4.3",
+    "VKS-721-20041-1-25-25H1A": "SEP 4.3",
+    "VKS-721-20041-2-25-25H1A": "SEP 4.3",
+    "VKS-721-20041-3-80-25H1A": "SEP 4.3",
+    "VKT-721-20003-1-80-10H2A": "SEP 4.3",
+    "VT-720-20008-27-25-10H1A": "SEP 4.3",
+    "VT-720-20008-28-15-10H1A": "SEP 4.3",
+    "VT-720-20008-32-15-10H1A": "SEP 4.3",
+    "VVM-720-20014-22-40-10H2A": "SEP 4.3",
+    "VVM-720-20014-25-40-10H2A": "SEP 4.3",
+    "VVM-720-20014-26-40-10H2A": "SEP 4.3",
+    "VVM-720-20014-27-40-10H2A": "SEP 4.3",
+    "VVM-720-20014-28-40-10H2A": "SEP 4.3",
+    "VVM-720-20014-29-40-10H2A": "SEP 4.3",
+    "VVM-721-20006-1-250-10H2A": "SEP 4.3",
+    "VVM-721-20006-2-40-10H2A": "SEP 4.3",
+    "VVM-721-20006-3-25-10H2A": "SEP 4.3",
+    "VVM-721-20006-5-25-10H2A": "SEP 4.3",
+    "VVM-721-20006-6-25-10H2A": "SEP 4.3",
+    "GL-721-20045-1-150-10C1B": "SEP 4.3",
+    "GL-721-20070-1-150-10C1B": "SEP 4.3",
+    "AM11-721-20016-2-200-25C1B": "SEP 4.3",
+    ".": "."
+  },
+  "LHT": {
+    "ÅM17-716-20190-1-150-40C1B": "I",
+    "ÅM17-716-20190-2-50-40C1B": "SEP 4.3",
+    "ÅM17-716-20190-4-50-40C1B": "SEP 4.3",
+    "ÅM17-716-20190-5-80-40C1B": "SEP 4.3",
+    "ÅM17-716-20190-6-50-40C1B": "SEP 4.3",
+    "ÅM17-716-20190-7-25-40C1B": "SEP 4.3",
+    "ÅM17-716-20190-8-25-40C1B": "SEP 4.3",
+    "ÅM17-716-20190-9-25-40C1B": "SEP 4.3",
+    "ÅM17-716-20190-10-25-40C1B": "SEP 4.3",
+    "ÅM17-716-20190-11-25-40C1B": "SEP 4.3",
+    "ÅM17-716-20190-12-25-40C1B": "SEP 4.3",
+    "ÅM17-716-20190-13-25-40C1B": "SEP 4.3",
+    "ÅM17-716-20190-14-25-40C1B": "SEP 4.3",
+    "ÅM17-716-20190-15-25-40C1B": "SEP 4.3",
+    "ÅM17-716-20190-16-25-40C1B": "SEP 4.3",
+    "ÅM17-716-20190-17-25-40C1B": "SEP 4.3",
+    "ÅM17-716-20190-18-25-40C1B": "SEP 4.3",
+    "ÅM17-716-20190-19-25-40C1B": "SEP 4.3",
+    "ÅM17-716-20190-22-80-40H3A": "I",
+    "ÅM17-716-20190-23-150-40C1B": "SEP 4.3",
+    "ÅM17-716-20190-24-250-40H3A": "II",
+    "ÅM17-716-20190-25-250-40H3A": "II",
+    "GÅL-716-20159-1-300-25H2A": "II",
+    "GÅL-716-20160-1-300-25H2A": "II",
+    "GÅL-716-20161-1-400-25H2A": "SEP 4.3",
+    "GÅL-716-20161-3-300-25H2A": "II",
+    "GÅL-716-20162-1-80-25H2A": "I",
+    "GÅL-716-20162-2-100-25H2A": "I",
+    "GÅL-716-20162-5-250-25H2A": "II",
+    "GÅL-716-20163-1-80-25H2A": "I",
+    "GÅL-716-20163-2-25-25H2A": "SEP 4.3",
+    "GÅL-716-20163-3-50-25H2A": "SEP 4.3",
+    "GÅL-716-20163-4-100-25H2A": "I",
+    "GÅL-716-20164-1-80-25H2A": "I",
+    "GÅL-716-20164-2-100-25H2A": "I",
+    "GÅL-716-20165-1-80-25H2A": "I",
+    "GÅL-716-20165-2-100-25H2A": "I",
+    "GÅL-716-20166-1-50-10H2A": "SEP 4.3",
+    "GKD-716-20186-2-250-25H2A": "III",
+    "GKD-716-20186-3-200-25H2A": "II",
+    "GKD-716-20186-4-200-25H2A": "II",
+    "GKD-716-20186-5-250-25H2A": "II",
+    "GKD-716-20187-1-150-10H2A": "II",
+    "GKD-716-20188-1-300-10H2A": "II",
+    "KF-716-20190-20-25-40C1B": "SEP 4.3",
+    "KF-716-20190-26-25-40C1B": "SEP 4.3",
+    "KF-716-20190-27-25-40C1B": "SEP 4.3",
+    "KL-716-20185-1-50-40H1A": "SEP 4.3",
+    "KL-716-20185-2-50-40H1A": "I",
+    "KY-716-20195-1-100-10H1A": "SEP 4.3",
+    "KY-716-20195-2-50-40H1A": "SEP 4.3",
+    "KY-716-20195-3-50-40H1A": "I",
+    "KY-716-20196-1-25-10H1A": "SEP 4.3",
+    "KY-716-20197-1-50-40H1A": "SEP 4.3",
+    "KY-716-20197-3-50-40H1A": "SEP 4.3",
+    "KY-716-20197-4-25-40H1A": "SEP 4.3",
+    "KY-716-20197-5-25-40H1A": "I",
+    "KY-716-20199-1-100-10H1A": "SEP 4.3",
+    "KY-716-20199-3-80-16H1A": "SEP 4.3",
+    "KY-716-20199-5-50-16H1A": "SEP 4.3",
+    "LTJ-716-20150-2-300-40H3A": "II",
+    "LTJ-716-20150-3-300-40H3A": "III",
+    "LTJ-716-20151-1-300-40H3A": "II",
+    "LTJ-716-20151-2-300-40H3A": "II",
+    "LTJ-716-20152-1-300-40H3A": "II",
+    "LTJ-716-20152-2-300-40H3A": "II",
+    "LTJ-716-20153-1-300-40H3A": "II",
+    "LTJ-716-20153-2-300-40H3A": "II",
+    "LTJ-716-20154-1-300-40H3A": "II",
+    "LTJ-716-20155-1-300-40H3A": "II",
+    "LTJ-716-20156-1-300-40H3A": "II",
+    "LTJ-716-20157-1-300-40H3A": "II",
+    "LTJ-716-20158-1-300-40H3A": "II",
+    "LTJ-716-20158-2-300-40H3A": "III",
+    "LTJ-716-20173-1-150-40H1A": "I",
+    "LTJ-716-20174-1-100-40H1A": "II",
+    "LTJ-716-20174-2-100-40H1A": "I",
+    "LTJ-716-20175-1-100-40H1A": "II",
+    "LTJ-716-20175-2-100-40H1A": "I",
+    "LTJ-716-20176-1-100-40H1A": "II",
+    "LTJ-716-20176-2-100-40H1A": "I",
+    "LTJ-716-20177-1-100-40H1A": "II",
+    "LTJ-716-20177-2-100-40H1A": "I",
+    "LTJ-716-20178-1-100-40H1A": "II",
+    "LTJ-716-20178-2-100-40H1A": "I",
+    "LTJ-716-20179-2-100-40H1A": "I",
+    "LTJ-716-20180-1-100-40H1A": "II",
+    "LTJ-716-20180-2-100-40H1A": "I",
+    "LTJ-716-20181-1-100-40H1A": "II",
+    "LTJ-716-20181-2-100-40H1A": "I",
+    "LTJ-716-20182-1-100-40H1A": "II",
+    "LTJ-716-20182-2-100-40H1A": "I",
+    "VHM-716-20172-1-100-10H2A": "SEP 4.3",
+    "VKM-716-20170-1-80-10H2A": "SEP 4.3",
+    "VKM-716-20170-2-50-10H2A": "SEP 4.3",
+    "VKM-716-20170-3-50-10H2A": "SEP 4.3",
+    "VT-716-20191-1-25-16H1A": "SEP 4.3",
+    "VT-716-20191-2-15-16H1A": "SEP 4.3",
+    "VT-716-20191-3-15-16H1A": "SEP 4.3",
+    "VT-716-20191-4-15-16H1A": "SEP 4.3",
+    "VT-716-20191-5-15-16H1A": "SEP 4.3",
+    "VT-716-20191-6-15-16H1A": "SEP 4.3",
+    "VVM-716-20171-1-100-10H2A": "SEP 4.3",
+    "VVM-716-20171-2-25-10H2A": "SEP 4.3",
+    "VVM-716-20171-3-25-10H2A": "SEP 4.3",
+    "AM17-716-20190-5-100-40C1B": "SEP 4.3",
+    ".": "."
+  }
+};
+
+</head>
+<body>
+
+<!-- USER SETUP -->
+<div class="user-setup" id="userSetup">
+  <div class="user-card">
+    <h2>🏗️ IsoManager</h2>
+    <p>Zadaj svoje meno</p>
+    <input type="text" id="userNameInp" placeholder="Tvoje meno" maxlength="20" onkeydown="if(event.key==='Enter')startApp()" />
+    <p style="font-size:11px;color:var(--text3);margin-bottom:8px">Vyber farbu:</p>
+    <div class="av-pick" id="avPick"></div>
+    <button class="btn btn-blue" style="width:100%;justify-content:center;padding:8px" onclick="startApp()">Vstúpiť →</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none;flex-direction:column;height:100%">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="app-logo">Iso<span>Manager</span></div>
+    <div class="sep"></div>
+    <div class="online-dot"></div>
+    <span class="online-label" id="onlineLabel">0 online</span>
+    <div class="sep"></div>
+    <div class="top-search-wrap" style="position:relative;flex:1;max-width:400px">
+      <span class="top-search-icon">🔍</span>
+      <input class="top-search" id="globalSearch" placeholder="Hľadaj kód napr. 20080 alebo 712-20019..." oninput="doSearch(this.value)" onblur="setTimeout(closeSearch,200)" style="width:100%" />
+      <div class="search-drop" id="searchDrop"></div>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn btn-amber" onclick="openBalikModal()">📦 <span class="btn-text">Nový balík</span></button>
+    <button class="btn btn-purple" onclick="openNakladkaModal()">🚛 <span class="btn-text">Nová nakladka</span></button>
+  </div>
+
+  <!-- NAV TABS -->
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="showPage('spooly')">📐 Spooly</div>
+    <div class="nav-tab" onclick="showPage('baliky')">📦 Balíky</div>
+    <div class="nav-tab" onclick="showPage('nakladky')">🚛 Nakladky</div>
+    <div class="nav-tab" onclick="showPage('prehlad')">📊 Prehľad</div>
+  </div>
+
+  <!-- PAGE: SPOOLY -->
+  <div class="page active" id="page-spooly" style="flex-direction:row;overflow:hidden">
+    <!-- SEC TABS + SIDEBAR wrapper -->
+    <div style="display:flex;flex-direction:column;width:230px;border-right:1px solid var(--border);background:var(--surface)">
+      <div class="sec-tabs" style="padding:6px 8px;gap:4px;flex-wrap:wrap">
+        <div class="sec-tab active" onclick="switchSec('SUL',this)">SUL</div>
+        <div class="sec-tab" onclick="switchSec('FLA',this)">FLA</div>
+        <div class="sec-tab" onclick="switchSec('LIG',this)">LIG</div>
+        <div class="sec-tab" onclick="switchSec('DRY',this)">DRY</div>
+        <div class="sec-tab" onclick="switchSec('LHT',this)">LHT</div>
+      </div>
+      <div class="sb-head">
+        <input class="sb-inp" id="sbSearch" placeholder="Hľadaj izometriu..." oninput="filterSb(this.value)" />
+        <select class="sb-inp" id="sbFilter" onchange="filterSb(document.getElementById('sbSearch').value)">
+          <option value="all">Všetky</option>
+          <option value="no-sp">Bez spoolu</option>
+          <option value="has-sp">Má spool</option>
+        </select>
+      </div>
+      <div class="iso-list" id="isoList"></div>
+      <div class="sb-foot" id="sbFoot"></div>
+    </div>
+    <!-- CONTENT -->
+    <div class="content">
+      <div class="c-head">
+        <span class="c-title" id="cTitle">Vyber izometriu</span>
+        <span class="editing-by" id="editingBy"></span>
+      </div>
+      <div id="cBody" style="display:flex;flex:1;flex-direction:column;overflow:hidden">
+        <div class="empty"><div class="empty-ico">📐</div><div>Vyber izometriu zo zoznamu</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: BALIKY -->
+  <div class="page" id="page-baliky" style="flex-direction:column;overflow:hidden">
+    <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-shrink:0">
+      <span style="font-weight:600;font-size:13px">📦 Balíky spoolov</span>
+      <div class="spacer"></div>
+      <button class="btn btn-amber" onclick="openBalikModal()">＋ Nový balík</button>
+    </div>
+    <div class="balik-grid" id="balikGrid">
+      <div class="empty"><div class="empty-ico">📦</div><div>Zatiaľ žiadne balíky</div></div>
+    </div>
+  </div>
+
+  <!-- PAGE: NAKLADKY -->
+  <div class="page" id="page-nakladky" style="flex-direction:column;overflow:hidden">
+    <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-shrink:0">
+      <span style="font-weight:600;font-size:13px">🚛 Nakladky na kamión</span>
+      <div class="spacer"></div>
+      <button class="btn btn-purple" onclick="openNakladkaModal()">＋ Nová nakladka</button>
+    </div>
+    <div class="nakladka-grid" id="nakladkaGrid">
+      <div class="empty"><div class="empty-ico">🚛</div><div>Zatiaľ žiadne nakladky</div></div>
+    </div>
+  </div>
+
+  <!-- PAGE: PREHLAD -->
+  <div class="page" id="page-prehlad" style="flex-direction:column;overflow:hidden">
+    <div class="prehladbar">
+      <span style="font-weight:600;font-size:13px">📊 Prehľad všetkých spoolov</span>
+      <div class="spacer"></div>
+      <button class="filter-chip active" onclick="setPrehladFilter('all',this)">Všetky</button>
+      <button class="filter-chip" onclick="setPrehladFilter('volny',this)">Voľné</button>
+      <button class="filter-chip" onclick="setPrehladFilter('balik',this)">V balíku</button>
+      <button class="filter-chip" onclick="setPrehladFilter('nakladka',this)">V nakladke</button>
+      <button class="filter-chip" onclick="setPrehladFilter('vyvezene',this)">Vyvezené</button>
+      <input class="sb-inp" style="width:180px" placeholder="Hľadaj..." oninput="prehladSearch=this.value;renderPrehlad()" />
+      <button class="btn btn-green" onclick="exportPrehladExcel()">📊 Excel</button>
+      <button class="btn btn-red" onclick="cleanUndefinedSpools()" title="Zmaže všetky spooly bez čísla">🧹 Vyčistiť</button>
+    </div>
+    <div class="table-wrap" id="prehladTable"></div>
+  </div>
+
+</div>
+
+<!-- MODAL: Upraviť spool -->
+<div class="modal-bg" id="spoolModal">
+  <div class="modal">
+    <h3 id="spoolModalTitle">Upraviť spool</h3>
+    <div class="m-row">
+      <div style="flex:1;min-width:80px"><label class="m-label">SP číslo *</label><input class="m-inp" id="spNum" /></div>
+      <div style="flex:2;min-width:140px"><label class="m-label">Popis</label><input class="m-inp" id="spDesc" /></div>
+    </div>
+    <div class="m-row">
+      <div style="flex:1"><label class="m-label">Stav</label>
+        <select class="m-inp" id="spStatus">
+          <option value="new">Nový</option><option value="work">Vo výrobe</option><option value="done">Hotový</option>
+        </select>
+      </div>
+      <div style="flex:1"><label class="m-label">Poznámka</label><input class="m-inp" id="spNote" /></div>
+    </div>
+    <div class="m-foot">
+      <button class="btn" onclick="closeModal('spoolModal')">Zrušiť</button>
+      <button class="btn btn-blue" onclick="saveSpool()">Uložiť</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nový balík -->
+<div class="modal-bg" id="balikModal">
+  <div class="modal">
+    <h3>📦 Nový balík</h3>
+    <div class="m-row">
+      <div style="flex:1"><label class="m-label">Názov balíka *</label><input class="m-inp" id="balikName" placeholder="napr. B-01" /></div>
+    </div>
+    <div class="m-sec-title">Vyber spooly do balíka</div>
+    <div style="display:flex;gap:6px;margin-bottom:6px">
+      <input class="m-inp" id="balikSpSearch" placeholder="Hľadaj spool / izometriu..." oninput="filterBalikSp(this.value)" style="flex:1" />
+      <select class="m-inp" id="balikSecFilter" onchange="filterBalikSp(document.getElementById('balikSpSearch').value)" style="width:90px">
+        <option value="all">Všetky</option>
+        <option value="SUL">SUL</option><option value="FLA">FLA</option>
+        <option value="LIG">LIG</option><option value="DRY">DRY</option><option value="LHT">LHT</option>
+      </select>
+    </div>
+    <div class="spool-check-list" id="balikSpList"></div>
+    <div class="m-sec-title" style="margin-top:12px">Voľný materiál (fittingy, rúry...)</div>
+    <div id="balikMatList" style="margin-bottom:6px"></div>
+    <button class="btn" onclick="addMatRow('balikMatList')" style="width:100%;justify-content:center;margin-bottom:4px">＋ Pridať materiál</button>
+    <div class="m-foot">
+      <button class="btn" onclick="closeModal('balikModal')">Zrušiť</button>
+      <button class="btn btn-amber" onclick="saveBalik()">Vytvoriť balík</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nová nakladka -->
+<div class="modal-bg" id="nakladkaModal">
+  <div class="modal">
+    <h3>🚛 Nová nakladka</h3>
+    <div class="m-row">
+      <div style="flex:1"><label class="m-label">Názov / číslo nakladky *</label><input class="m-inp" id="nakName" placeholder="napr. NK-01" /></div>
+      <div style="flex:1"><label class="m-label">Dátum odvozu</label><input class="m-inp" type="date" id="nakDate" /></div>
+    </div>
+    <div class="m-row">
+      <div style="flex:1"><label class="m-label">Poznámka / dopravca</label><input class="m-inp" id="nakNote" placeholder="napr. DHL, SPL..." /></div>
+    </div>
+    <div class="m-sec-title">Pridaj balíky</div>
+    <div class="spool-check-list" id="nakBalikList" style="max-height:120px"></div>
+    <div class="m-sec-title">Alebo jednotlivé spooly</div>
+    <div style="display:flex;gap:6px;margin-bottom:6px">
+      <input class="m-inp" id="nakSpSearch" placeholder="Hľadaj spool..." oninput="filterNakSp(this.value)" style="flex:1" />
+      <select class="m-inp" id="nakSecFilter" onchange="filterNakSp(document.getElementById('nakSpSearch').value)" style="width:90px">
+        <option value="all">Všetky</option>
+        <option value="SUL">SUL</option><option value="FLA">FLA</option>
+        <option value="LIG">LIG</option><option value="DRY">DRY</option><option value="LHT">LHT</option>
+      </select>
+    </div>
+    <div class="spool-check-list" id="nakSpList"></div>
+    <div class="m-sec-title" style="margin-top:12px">Voľný materiál (fittingy, rúry...)</div>
+    <div id="nakMatList" style="margin-bottom:6px"></div>
+    <button class="btn" onclick="addMatRow('nakMatList')" style="width:100%;justify-content:center;margin-bottom:4px">＋ Pridať materiál</button>
+    <div class="m-foot">
+      <button class="btn" onclick="closeModal('nakladkaModal')">Zrušiť</button>
+      <button class="btn btn-purple" onclick="saveNakladka()">Vytvoriť nakladku</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== FIREBASE =====
+// db helpers - wraps modular SDK exposed on window
+const db = {
+  ref: (p) => ({ 
+    set: (v) => window.DBSet(p,v),
+    update: (v) => window.DBUpdate(p,v),
+    remove: () => window.DBRemove(p),
+    on: (ev, cb) => window.DBOn(p, cb),
+    onDisconnect: () => ({ remove: () => window.DBRemove(p) })
+  })
+};
+
+// ===== STATE =====
+const SECTIONS = ['SUL','FLA','LIG','DRY','LHT'];
+const AV_COLORS = [
+  {bg:'#CECBF6',c:'#3C3489'},{bg:'#9FE1CB',c:'#085041'},{bg:'#F5C4B3',c:'#712B13'},
+  {bg:'#B5D4F4',c:'#0C447C'},{bg:'#FAC775',c:'#633806'},{bg:'#F4C0D1',c:'#72243E'},
+  {bg:'#C0DD97',c:'#27500A'}
+];
+
+let me = {name:'',ci:0};
+let uid = 'u_'+Math.random().toString(36).slice(2,8);
+let curSec = 'SUL';
+let curIso = null;
+let spools = {};    // sec/isoKey -> {spId: sp}
+let baliky = {};
+let nakladky = {};
+let online = {};
+let editSpId = null;
+let prehladFilter = 'all';
+let prehladSearch = '';
+let spoolListeners = {};
+
+// ===== USER SETUP =====
+function initAvPick(){
+  const w = document.getElementById('avPick');
+  AV_COLORS.forEach((c,i)=>{
+    const d = document.createElement('div');
+    d.className='av-opt'+(i===0?' sel':'');
+    d.style.background=c.bg; d.style.color=c.c; d.textContent='●';
+    d.onclick=()=>{ document.querySelectorAll('.av-opt').forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); me.ci=i; };
+    w.appendChild(d);
+  });
+}
+function startApp(){
+  const n = document.getElementById('userNameInp').value.trim();
+  if(!n){alert('Zadaj meno!');return;}
+  me.name=n;
+  // remember on this device
+  try { localStorage.setItem('isoManagerUser', JSON.stringify({name:n, ci:me.ci})); } catch(e){}
+  document.getElementById('userSetup').style.display='none';
+  document.getElementById('app').style.display='flex';
+  initApp();
+}
+function initApp(){
+  if(!window.DB){ window.addEventListener('fbReady', initApp, {once:true}); return; }
+  listenBaliky(); listenNakladky(); listenOnline(); startPresence();
+  // listen all spools
+  SECTIONS.forEach(sec=>{
+    db.ref('spools/'+sec).on('value',snap=>{
+      const d=snap.val()||{};
+      Object.entries(d).forEach(([k,v])=>{ spools[sec+'/'+k]=v||{}; });
+      renderSb(); renderPrehlad(); if(curIso&&curSec===sec) renderSpoolTable();
+    });
+  });
+  switchSec('SUL');
+}
+
+// ===== NAV =====
+let curPage='spooly';
+function showPage(p){
+  curPage=p;
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>{
+    t.classList.toggle('active',['spooly','baliky','nakladky','prehlad'][i]===p);
+  });
+  document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  if(p==='prehlad') renderPrehlad();
+  if(p==='baliky') renderBalikGrid();
+  if(p==='nakladky') renderNakladkaGrid();
+}
+
+// ===== SECTIONS =====
+function switchSec(sec, el){
+  curSec=sec; curIso=null;
+  document.querySelectorAll('.sec-tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  else document.querySelectorAll('.sec-tab').forEach((t,i)=>t.classList.toggle('active',SECTIONS[i]===sec));
+  document.getElementById('sbSearch').value='';
+  document.getElementById('sbFilter').value='all';
+  renderSb(); showEmpty();
+}
+
+// ===== SIDEBAR =====
+function isoKey(iso){ return iso.replace(/[^a-zA-Z0-9_\-]/g,'_'); }
+function getSpools(sec,iso){ return spools[sec+'/'+isoKey(iso)]||{}; }
+
+function renderSb(q,filter){
+  q = q||document.getElementById('sbSearch')?.value||'';
+  filter = filter||document.getElementById('sbFilter')?.value||'all';
+  const isos = ISOMETRIES_DATA[curSec]||[];
+  const ql = q.toLowerCase();
+  const list = document.getElementById('isoList');
+  list.innerHTML=''; let shown=0;
+  isos.forEach(iso=>{
+    if(ql&&!iso.toLowerCase().includes(ql)) return;
+    const sps = getSpools(curSec,iso);
+    const cnt = Object.keys(sps).length;
+    if(filter==='no-sp'&&cnt>0) return;
+    if(filter==='has-sp'&&cnt===0) return;
+    const item=document.createElement('div');
+    item.className='iso-item'+(iso===curIso?' active':'');
+    const qlH = q ? q.toLowerCase() : '';
+    const isoHtml = qlH ? iso.replace(new RegExp('('+qlH.replace(/[-]/g,'\\-')+')','gi'),'<mark style="background:#fff3b0;border-radius:2px">$1</mark>') : iso;
+    item.innerHTML=`<span class="iso-name">${isoHtml}</span><span class="sp-badge ${cnt>0?'has':''}">${cnt>0?cnt+' SP':'—'}</span>`;
+    item.onclick=()=>selectIso(iso);
+    list.appendChild(item); shown++;
+  });
+  document.getElementById('sbFoot').textContent=`${shown} / ${isos.length}`;
+}
+function filterSb(q){ renderSb(q, document.getElementById('sbFilter').value); }
+
+// ===== ISO SELECT =====
+function selectIso(iso){
+  curIso=iso; updatePresence();
+  renderSb();
+  document.getElementById('cTitle').textContent=iso;
+  renderSpoolTable();
+}
+function showEmpty(){
+  document.getElementById('cTitle').textContent='Vyber izometriu';
+  document.getElementById('editingBy').textContent='';
+  document.getElementById('cBody').innerHTML='<div class="empty"><div class="empty-ico">📐</div><div>Vyber izometriu zo zoznamu</div></div>';
+}
+
+// ===== SPOOL TABLE =====
+function renderSpoolTable(){
+  if(!curIso) return;
+  const sps = getSpools(curSec,curIso);
+  const editors = Object.values(online).filter(u=>u.iso===curIso&&u.name!==me.name);
+  document.getElementById('editingBy').textContent = editors.length ? '✏️ '+editors.map(u=>u.name).join(', ') : '';
+  const body = document.getElementById('cBody');
+  body.innerHTML='';
+  const wrap=document.createElement('div');
+  wrap.style.cssText='display:flex;flex-direction:column;flex:1;overflow:hidden';
+  const tw=document.createElement('div'); tw.className='table-wrap';
+  const items=Object.entries(sps).sort((a,b)=>(parseInt(a[1].num)||0)-(parseInt(b[1].num)||0));
+
+  if(!items.length){
+    tw.innerHTML='<div class="empty"><div class="empty-ico">🔩</div><div>Žiadne spooly — pridaj prvý nižšie</div></div>';
+  } else {
+    const tbl=document.createElement('table');
+    tbl.innerHTML=`<thead><tr>
+      <th>SP</th><th>Popis</th><th>Stav</th>
+      <th title="Vyvezené z haly">✅ Vyv.</th>
+      <th>Balík</th><th>Nakladka</th><th>Pozn.</th><th></th>
+    </tr></thead>`;
+    const tb=document.createElement('tbody');
+    items.forEach(([sid,sp])=>{
+      const stC={new:'st-new',work:'st-work',done:'st-done'}[sp.status]||'st-new';
+      const stL={new:'Nový',work:'Výroba',done:'Hotový'}[sp.status]||'Nový';
+      const bName = sp.balikId&&baliky[sp.balikId] ? `<span class="pkg-chip">${baliky[sp.balikId].name}</span>` : '—';
+      const nName = sp.nakladkaId&&nakladky[sp.nakladkaId] ? `<span class="nakladka-chip">${nakladky[sp.nakladkaId].name}</span>` : '—';
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td><strong>SP-${sp.num}</strong></td>
+        <td>${sp.desc||'—'}</td>
+        <td><span class="${stC}">${stL}</span></td>
+        <td style="min-width:120px">
+          <div style="display:flex;align-items:center;gap:5px">
+            <input type="checkbox" class="vyvezene-check" ${sp.vyvezene?'checked':''} onchange="toggleVyvezene('${curSec}','${isoKey(curIso)}','${sid}',this.checked)" />
+            ${sp.vyvezeneKto ? `<span style="font-size:10px;color:var(--green);line-height:1.2">${sp.vyvezeneKto}<br><span style="color:var(--text3)">${sp.vyvezeneKedy||''}</span></span>` : ''}
+          </div>
+        </td>
+        <td>${bName}</td><td>${nName}</td>
+        <td style="font-size:11px;color:var(--text3)">${sp.note||''}</td>
+        <td style="display:flex;gap:3px">
+          <button class="sbtn" onclick="editSpool('${sid}')">✏️</button>
+          <button class="sbtn del" onclick="delSpool('${sid}')">🗑</button>
+        </td>`;
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb); tw.appendChild(tbl);
+  }
+
+  const ar=document.createElement('div'); ar.className='add-row';
+  ar.innerHTML=`
+    <span style="font-size:11px;color:var(--text2);width:100%;display:block;margin-bottom:4px">Pridať SP:</span>
+    <input class="add-inp" id="newSpNum" placeholder="Číslo SP" style="width:90px" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+    <input class="add-inp" id="newSpDesc" placeholder="Popis (voliteľné)" style="flex:1;min-width:80px" autocomplete="off" autocorrect="off" spellcheck="false" />
+    <select class="add-inp" id="newSpSt" style="width:105px">
+      <option value="new">Nový</option><option value="work">Vo výrobe</option><option value="done">Hotový</option>
+    </select>
+    <button class="btn btn-blue" style="width:100%;justify-content:center;margin-top:4px" onclick="addSpool()">＋ Pridať SP</button>`;
+  wrap.appendChild(tw); wrap.appendChild(ar);
+  body.appendChild(wrap);
+}
+
+// ===== SPOOL CRUD =====
+function addSpool(){
+  if(!curIso) return;
+  const numRaw = document.getElementById('newSpNum');
+  if(!numRaw){ alert('Pole pre číslo nenájdené!'); return; }
+  const num = numRaw.value.trim();
+  if(!num || num===''){ alert('Zadaj číslo SP!'); numRaw.focus(); return; }
+
+  // check duplicates in this isometry
+  const existing = Object.values(getSpools(curSec,curIso));
+  const dup = existing.find(s => s.num === num);
+  if(dup){
+    let msg = '⚠️ SP-'+num+' už existuje v tejto izometrii!';
+    if(dup.vyvezene)        msg += '\n✅ Tento spool je už VYVEZENÝ z haly.';
+    if(dup.nakladkaId && nakladky[dup.nakladkaId]) msg += '\n🚛 Je v nakladke: '+nakladky[dup.nakladkaId].name;
+    if(dup.balikId && baliky[dup.balikId])         msg += '\n📦 Je v balíku: '+baliky[dup.balikId].name;
+    msg += '\n\nChceš ho napriek tomu pridať znova?';
+    if(!confirm(msg)) return;
+  }
+
+  const desc=document.getElementById('newSpDesc').value.trim();
+  const status=document.getElementById('newSpSt').value;
+  const k=isoKey(curIso);
+  db.ref('spools/'+curSec+'/'+k+'/sp_'+Date.now()).set({num,desc,status,note:'',vyvezene:false,balikId:'',nakladkaId:'',creator:me.name,createdAt:Date.now()});
+  document.getElementById('newSpNum').value='';
+  document.getElementById('newSpDesc').value='';
+  setTimeout(()=>{ const el=document.getElementById('newSpNum'); if(el) el.focus(); }, 100);
+}
+
+function toggleVyvezene(sec,key,sid,val){
+  const updates = { vyvezene: val };
+  if(val){
+    updates.vyvezeneKto = me.name;
+    updates.vyvezeneKedy = new Date().toLocaleString('sk-SK');
+  } else {
+    updates.vyvezeneKto = '';
+    updates.vyvezeneKedy = '';
+  }
+  db.ref('spools/'+sec+'/'+key+'/'+sid).update(updates);
+}
+
+function editSpool(sid){
+  if(!curIso) return;
+  editSpId=sid;
+  const sp=getSpools(curSec,curIso)[sid]||{};
+  document.getElementById('spoolModalTitle').textContent='Upraviť SP-'+sp.num;
+  document.getElementById('spNum').value=sp.num||'';
+  document.getElementById('spDesc').value=sp.desc||'';
+  document.getElementById('spStatus').value=sp.status||'new';
+  document.getElementById('spNote').value=sp.note||'';
+  openModal('spoolModal');
+}
+function saveSpool(){
+  if(!curIso||!editSpId) return;
+  const num=document.getElementById('spNum').value.trim();
+  if(!num){alert('Zadaj číslo!');return;}
+  const k=isoKey(curIso);
+  const ex=getSpools(curSec,curIso)[editSpId]||{};
+  db.ref('spools/'+curSec+'/'+k+'/'+editSpId).update({
+    num, desc:document.getElementById('spDesc').value.trim(),
+    status:document.getElementById('spStatus').value,
+    note:document.getElementById('spNote').value.trim(),
+    vyvezene:ex.vyvezene||false, balikId:ex.balikId||'', nakladkaId:ex.nakladkaId||''
+  });
+  closeModal('spoolModal'); editSpId=null;
+}
+function delSpool(sid){
+  if(!curIso) return;
+  const sp = getSpools(curSec,curIso)[sid]||{};
+  const label = sp.num ? 'SP-'+sp.num : 'tento spool (undefined)';
+  if(!confirm('Zmazať '+label+'?')) return;
+  const path = 'spools/'+curSec+'/'+isoKey(curIso)+'/'+sid;
+  db.ref(path).remove()
+    .then(()=>{ /* ok */ })
+    .catch(err=>{ alert('Chyba pri mazaní: '+err.message); });
+}
+
+// ===== ALL SPOOLS FLAT =====
+function getAllSpools(){
+  const res=[];
+  SECTIONS.forEach(sec=>{
+    (ISOMETRIES_DATA[sec]||[]).forEach(iso=>{
+      const k=sec+'/'+isoKey(iso);
+      Object.entries(spools[k]||{}).forEach(([sid,sp])=>{
+        res.push({sec,iso,sid,key:isoKey(iso),...sp});
+      });
+    });
+  });
+  return res;
+}
+function getFreeSpools(){
+  return getAllSpools().filter(s=>!s.balikId&&!s.nakladkaId);
+}
+
+// ===== BALIKY =====
+function listenBaliky(){
+  db.ref('baliky').on('value',snap=>{
+    baliky=snap.val()||{};
+    renderBalikGrid();
+    if(curIso) renderSpoolTable();
+    renderPrehlad();
+  });
+}
+
+function openBalikModal(){
+  document.getElementById('balikName').value='';
+  document.getElementById('balikSpSearch').value='';
+  document.getElementById('balikSecFilter').value='all';
+  document.getElementById('balikMatList').innerHTML='';
+  // reload all spools fresh before building list
+  const loadAndBuild = () => {
+    buildBalikSpList('','all');
+    // if empty, try once more after short delay (Firebase still loading)
+    const el = document.getElementById('balikSpList');
+    if(el && el.children.length === 0){
+      setTimeout(()=>buildBalikSpList('','all'), 800);
+    }
+  };
+  loadAndBuild();
+  openModal('balikModal');
+}
+
+function buildBalikSpList(q,sec){
+  const el=document.getElementById('balikSpList');
+  if(!el) return;
+  el.innerHTML='';
+  const ql=q.toLowerCase();
+  // get all spools across all sections
+  let all=[];
+  SECTIONS.forEach(s=>{
+    (ISOMETRIES_DATA[s]||[]).forEach(iso=>{
+      const k=isoKey(iso);
+      const sps=spools[s+'/'+k]||{};
+      Object.entries(sps).forEach(([sid,sp])=>{
+        if(!sp||!sp.num) return;
+        all.push({sec:s,iso,key:k,sid,...sp});
+      });
+    });
+  });
+  // filter only free spools (no balik, no nakladka)
+  const free=all.filter(sp=>!sp.balikId&&!sp.nakladkaId);
+  let any=false;
+  free.forEach(sp=>{
+    if(sec!=='all'&&sp.sec!==sec) return;
+    const lbl='SP-'+sp.num+' '+sp.iso;
+    if(ql&&!lbl.toLowerCase().includes(ql)) return;
+    const item=document.createElement('label');
+    item.className='sp-check-item';
+    item.innerHTML='<input type="checkbox" value="'+sp.sec+'|'+sp.key+'|'+sp.sid+'" />'
+      +'<span class="sp-check-label">SP-'+sp.num+'</span>'
+      +'<span class="sp-check-sub">'+sp.sec+' / '+sp.iso+'</span>';
+    el.appendChild(item); any=true;
+  });
+  if(!any){
+    const total=all.length;
+    el.innerHTML='<div style="padding:8px;font-size:11px;color:var(--text3)">'
+      +(total===0 ? 'Spooly sa načítavajú... skús zavrieť a znova otvoriť.' : 'Žiadne voľné spooly (všetky sú v balíkoch alebo nakladkách)')
+      +'</div>';
+  }
+}
+function filterBalikSp(q){
+  buildBalikSpList(q, document.getElementById('balikSecFilter').value);
+}
+
+function saveBalik(){
+  const name=document.getElementById('balikName').value.trim();
+  if(!name){alert('Zadaj názov balíka!');return;}
+  const checked=Array.from(document.querySelectorAll('#balikSpList input:checked')).map(x=>x.value);
+  if(!checked.length){alert('Vyber aspoň jeden spool!');return;}
+  const bid='bk_'+Date.now();
+  const balikMat = getMatRows('balikMatList');
+  db.ref('baliky/'+bid).set({name,spools:checked,created:Date.now(),creator:me.name,volnyMaterial:balikMat.length?balikMat:null});
+  // mark spools as in balik
+  checked.forEach(v=>{
+    const [sec,key,sid]=v.split('|');
+    db.ref('spools/'+sec+'/'+key+'/'+sid+'/balikId').set(bid);
+  });
+  closeModal('balikModal');
+}
+
+function renderBalikGrid(){
+  const el=document.getElementById('balikGrid');
+  const entries=Object.entries(baliky);
+  if(!entries.length){
+    el.innerHTML='<div class="empty"><div class="empty-ico">📦</div><div>Zatiaľ žiadne balíky</div></div>';
+    return;
+  }
+  el.innerHTML='';
+  entries.sort((a,b)=>a[1].created-b[1].created).forEach(([bid,bk])=>{
+    const cnt=(bk.spools||[]).length;
+    const card=document.createElement('div');
+    card.className='balik-card';
+    card.innerHTML=`
+      <div class="bc-name">${bk.name}</div>
+      <div class="bc-sub">${cnt} spool${cnt!==1?'ov':''}</div>
+      <div class="bc-acts">
+        <button class="sbtn" onclick="showBalikDetail('${bid}')">👁</button>
+        <button class="sbtn" onclick="editBalik('${bid}')">✏️</button>
+        <button class="sbtn del" onclick="deleteBalik('${bid}')">🗑</button>
+      </div>`;
+    el.appendChild(card);
+  });
+}
+
+function deleteBalik(bid){
+  if(!confirm('Zmazať balík? Spooly budú uvoľnené.')) return;
+  const bk=baliky[bid]; if(!bk) return;
+  (bk.spools||[]).forEach(v=>{
+    const [sec,key,sid]=v.split('|');
+    db.ref('spools/'+sec+'/'+key+'/'+sid+'/balikId').set('');
+  });
+  db.ref('baliky/'+bid).remove();
+}
+
+// ===== NAKLADKY =====
+function listenNakladky(){
+  db.ref('nakladky').on('value',snap=>{
+    nakladky=snap.val()||{};
+    renderNakladkaGrid();
+    if(curIso) renderSpoolTable();
+    renderPrehlad();
+  });
+}
+
+function openNakladkaModal(){
+  document.getElementById('nakName').value='';
+  document.getElementById('nakDate').value=new Date().toISOString().slice(0,10);
+  document.getElementById('nakNote').value='';
+  document.getElementById('nakSpSearch').value='';
+  document.getElementById('nakSecFilter').value='all';
+  document.getElementById('nakMatList').innerHTML='';
+  window._nakSelectedSpools = new Set();
+  buildNakBalikList();
+  buildNakSpList('','all');
+  openModal('nakladkaModal');
+}
+
+function buildNakBalikList(){
+  const el=document.getElementById('nakBalikList');
+  el.innerHTML='';
+  const entries=Object.entries(baliky);
+  if(!entries.length){
+    el.innerHTML='<div style="padding:6px;font-size:11px;color:var(--text3)">Žiadne balíky</div>';
+    return;
+  }
+  entries.forEach(([bid,bk])=>{
+    const item=document.createElement('label');
+    item.className='sp-check-item';
+    item.innerHTML=`<input type="checkbox" value="balik|${bid}" /><span class="sp-check-label">📦 ${bk.name}</span><span class="sp-check-sub">${(bk.spools||[]).length} spoolov</span>`;
+    el.appendChild(item);
+  });
+}
+
+// Global selection set - survives filter changes
+if(typeof window._nakSelectedSpools === 'undefined') window._nakSelectedSpools = new Set();
+
+function buildNakSpList(q, sec){
+  const el = document.getElementById('nakSpList');
+  if(!el) return;
+  el.innerHTML = '';
+  const ql = q.toLowerCase();
+  const all = getAllSpools().filter(s => !s.nakladkaId);
+  let any = false;
+
+  all.forEach(sp => {
+    if(sec !== 'all' && sp.sec !== sec) return;
+    const lbl = 'SP-' + sp.num + ' ' + sp.iso + ' ' + sp.sec;
+    if(ql && !lbl.toLowerCase().includes(ql)) return;
+
+    const val = 'spool|' + sp.sec + '|' + sp.key + '|' + sp.sid;
+    const isSelected = window._nakSelectedSpools.has(val);
+
+    const item = document.createElement('label');
+    item.className = 'sp-check-item';
+    if(isSelected) item.style.background = 'var(--blue-light)';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = val;
+    cb.checked = isSelected;
+    cb.onchange = function(){
+      if(this.checked){
+        window._nakSelectedSpools.add(val);
+        item.style.background = 'var(--blue-light)';
+      } else {
+        window._nakSelectedSpools.delete(val);
+        item.style.background = '';
+      }
+      updateNakCount();
+    };
+
+    const sp1 = document.createElement('span');
+    sp1.className = 'sp-check-label';
+    sp1.textContent = 'SP-' + sp.num;
+
+    const sp2 = document.createElement('span');
+    sp2.className = 'sp-check-sub';
+    sp2.textContent = sp.sec + ' / ' + sp.iso + (sp.balikId && baliky[sp.balikId] ? ' 📦' + baliky[sp.balikId].name : '');
+
+    item.appendChild(cb);
+    item.appendChild(sp1);
+    item.appendChild(sp2);
+    el.appendChild(item);
+    any = true;
+  });
+
+  if(!any){
+    el.innerHTML = '<div style="padding:8px;font-size:11px;color:var(--text3)">Žiadne dostupné spooly</div>';
+  }
+
+  updateNakCount();
+}
+
+function updateNakCount(){
+  const n = window._nakSelectedSpools.size;
+  const btn = document.querySelector('#nakladkaModal .btn-purple');
+  if(btn) btn.textContent = 'Vytvoriť nakladku' + (n > 0 ? ' (' + n + ' sp)' : '');
+}
+
+function filterNakSp(q){
+  buildNakSpList(q, document.getElementById('nakSecFilter').value);
+}
+
+function saveNakladka(){
+  const name=document.getElementById('nakName').value.trim();
+  if(!name){alert('Zadaj názov nakladky!');return;}
+  const date=document.getElementById('nakDate').value;
+  const note=document.getElementById('nakNote').value.trim();
+
+  const checkedBaliky=Array.from(document.querySelectorAll('#nakBalikList input:checked')).map(x=>x.value);
+  const checkedSpooly=Array.from(window._nakSelectedSpools);
+
+  const nakMat2 = getMatRows('nakMatList');
+  if(!checkedBaliky.length&&!checkedSpooly.length&&!nakMat2.length){
+    alert('Vyber aspoň jeden balík, spool alebo pridaj voľný materiál!');return;
+  }
+
+  const nid='nk_'+Date.now();
+  const spoolRefs=[];
+
+  // process baliky
+  checkedBaliky.forEach(v=>{
+    const bid=v.split('|')[1];
+    const bk=baliky[bid]; if(!bk) return;
+    (bk.spools||[]).forEach(sv=>{
+      const [sec,key,sid]=sv.split('|');
+      spoolRefs.push({sec,key,sid});
+      db.ref('spools/'+sec+'/'+key+'/'+sid+'/nakladkaId').set(nid);
+    });
+    db.ref('baliky/'+bid+'/nakladkaId').set(nid);
+  });
+
+  // process individual spools
+  checkedSpooly.forEach(v=>{
+    const parts=v.split('|'); // spool|sec|key|sid
+    const [,sec,key,sid]=parts;
+    spoolRefs.push({sec,key,sid});
+    db.ref('spools/'+sec+'/'+key+'/'+sid+'/nakladkaId').set(nid);
+  });
+
+  db.ref('nakladky/'+nid).set({
+    name, date, note,
+    spools: spoolRefs.map(s=>s.sec+'|'+s.key+'|'+s.sid),
+    balikIds: checkedBaliky.map(v=>v.split('|')[1]),
+    created: Date.now(),
+    creator: me.name,
+    volnyMaterial: nakMat2.length ? nakMat2 : null
+  });
+  closeModal('nakladkaModal');
+}
+
+function renderNakladkaGrid(){
+  const el=document.getElementById('nakladkaGrid');
+  const entries=Object.entries(nakladky);
+  if(!entries.length){
+    el.innerHTML='<div class="empty"><div class="empty-ico">🚛</div><div>Zatiaľ žiadne nakladky</div></div>';
+    return;
+  }
+  el.innerHTML='';
+  entries.sort((a,b)=>b[1].created-a[1].created).forEach(([nid,nk])=>{
+    const cnt=(nk.spools||[]).length;
+    const card=document.createElement('div');
+    card.className='nakladka-card';
+    card.innerHTML=`
+      <div class="nc-name">${nk.name}</div>
+      <div class="nc-date">📅 ${nk.date||'—'} ${nk.note?'· '+nk.note:''}</div>
+      <div class="nc-sub">${cnt} spool${cnt!==1?'ov':''} ${nk.volnyMaterial&&nk.volnyMaterial.length ? '· '+nk.volnyMaterial.length+' mat.' : ''}</div>
+      <div class="nc-acts">
+        <button class="sbtn" onclick="showNakladkaDetail('${nid}')">👁</button>
+        <button class="sbtn" onclick="editNakladka('${nid}')">✏️</button>
+        <button class="sbtn" onclick="exportNakladkaPdf('${nid}')">📄 PDF</button>
+        <button class="sbtn" onclick="exportNakladkaExcel('${nid}')">📊 Excel</button>
+        <button class="sbtn del" onclick="deleteNakladka('${nid}')">🗑</button>
+      </div>
+      <button class="sbtn" style="width:100%;margin-top:6px;background:var(--purple-bg);color:var(--purple);border-color:#9b5ad4" onclick="openMergeModal('${nid}')">🔀 Zlúčiť s inou nakladkou</button>
+    `;
+    el.appendChild(card);
+  });
+}
+
+function deleteNakladka(nid){
+  if(!confirm('Zmazať nakladku? Spooly budú uvoľnené.')) return;
+  const nk=nakladky[nid]; if(!nk) return;
+  (nk.spools||[]).forEach(v=>{
+    const [sec,key,sid]=v.split('|');
+    db.ref('spools/'+sec+'/'+key+'/'+sid+'/nakladkaId').set('');
+  });
+  (nk.balikIds||[]).forEach(bid=>{
+    db.ref('baliky/'+bid+'/nakladkaId').set('');
+  });
+  db.ref('nakladky/'+nid).remove();
+}
+
+// ===== PREHLAD =====
+function setPrehladFilter(f,el){
+  prehladFilter=f;
+  document.querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  renderPrehlad();
+}
+
+function renderPrehlad(){
+  const el=document.getElementById('prehladTable');
+  if(!el) return;
+  const ql=prehladSearch.toLowerCase();
+  const all=getAllSpools();
+  const rows=all.filter(sp=>{
+    if(prehladFilter==='volny'&&(sp.balikId||sp.nakladkaId||sp.vyvezene)) return false;
+    if(prehladFilter==='balik'&&!sp.balikId) return false;
+    if(prehladFilter==='nakladka'&&!sp.nakladkaId) return false;
+    if(prehladFilter==='vyvezene'&&!sp.vyvezene) return false;
+    if(ql&&!(`sp-${sp.num} ${sp.iso} ${sp.sec}`).toLowerCase().includes(ql)) return false;
+    return true;
+  }).sort((a,b)=>a.sec.localeCompare(b.sec)||a.iso.localeCompare(b.iso)||(parseInt(a.num)||0)-(parseInt(b.num)||0));
+
+  if(!rows.length){
+    el.innerHTML='<div class="empty"><div class="empty-ico">🔍</div><div>Žiadne výsledky</div></div>';
+    return;
+  }
+  const stL={new:'Nový',work:'Výroba',done:'Hotový'};
+  const stC={new:'st-new',work:'st-work',done:'st-done'};
+  el.innerHTML=`<table>
+    <thead><tr>
+      <th>Sekcia</th><th>Izometria</th><th>SP</th><th>Popis</th><th>Stav</th>
+      <th>Vyvezené</th><th>Balík</th><th>Vytvoril</th><th>Nakladka</th><th>Dátum</th>
+    </tr></thead>
+    <tbody>${rows.map(sp=>{
+      const bName=sp.balikId&&baliky[sp.balikId]?`<span class="pkg-chip">${baliky[sp.balikId].name}</span>`:'—';
+      const nk=sp.nakladkaId&&nakladky[sp.nakladkaId];
+      const nName=nk?`<span class="nakladka-chip">${nk.name}</span>`:'—';
+      const nDate=nk?nk.date:'';
+      return `<tr>
+        <td>${sp.sec}</td>
+        <td style="font-size:11px">${sp.iso}</td>
+        <td style="font-size:11px;color:var(--blue-dark);white-space:nowrap">${(typeof PED_DATA!=="undefined"&&PED_DATA[sp.sec]&&PED_DATA[sp.sec][sp.iso])||''}</td>
+        <td><strong>SP-${sp.num}</strong></td><td>${sp.desc||'—'}</td>
+        <td><span class="${stC[sp.status]||'st-new'}">${stL[sp.status]||'Nový'}</span></td>
+        <td style="text-align:center">${sp.vyvezene ? '✅' : '—'}${sp.vyvezeneKto ? '<br><span style="font-size:10px;color:var(--green)">'+sp.vyvezeneKto+'</span>' : ''}</td>
+        <td>${bName}</td>
+        <td style="font-size:11px;color:var(--text3)">${sp.creator||'—'}</td>
+        <td>${nName}</td><td style="font-size:11px;color:var(--text3)">${nDate}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+function exportPrehladExcel(){
+  const all=getAllSpools();
+  const rows=all.map(sp=>({
+    Sekcia:sp.sec, Izometria:sp.iso, PED:(typeof PED_DATA!=="undefined"&&PED_DATA[sp.sec]&&PED_DATA[sp.sec][sp.iso])||'', Spool:'SP-'+sp.num, Popis:sp.desc||'',
+    Stav:{new:'Nový',work:'Vo výrobe',done:'Hotový'}[sp.status]||'Nový',
+    Vyvezene:sp.vyvezene?'ÁNO':'NIE',
+    VyvezeneKto:sp.vyvezeneKto||'',
+    VyvezeneKedy:sp.vyvezeneKedy||'',
+    Vytvoril:sp.creator||'—',
+    Balik:sp.balikId&&baliky[sp.balikId]?baliky[sp.balikId].name:'',
+    Nakladka:sp.nakladkaId&&nakladky[sp.nakladkaId]?nakladky[sp.nakladkaId].name:'',
+    DatumNakladky:sp.nakladkaId&&nakladky[sp.nakladkaId]?nakladky[sp.nakladkaId].date:''
+  }));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:8},{wch:40},{wch:10},{wch:25},{wch:12},{wch:10},{wch:14},{wch:14},{wch:14}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Prehľad');
+  XLSX.writeFile(wb,'IsoManager_prehlad_'+today()+'.xlsx');
+}
+
+// ===== EXPORT NAKLADKA =====
+function exportNakladkaPdf(nid){
+  const nk=nakladky[nid]; if(!nk) return;
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  doc.setFont('helvetica');
+  doc.setFontSize(16); doc.text('Dodací list – '+nk.name,14,16);
+  doc.setFontSize(9);
+  doc.text('Dátum odvozu: '+(nk.date||'—'),14,23);
+  doc.text('Dopravca / poznámka: '+(nk.note||'—'),14,28);
+  doc.text('Vygenerované: '+new Date().toLocaleDateString('sk-SK'),14,33);
+
+  const rows=[];
+  // collect all spool refs: direct spools + spools from balikIds
+  const allSpoolRefs = new Set(nk.spools||[]);
+  (nk.balikIds||[]).forEach(bid=>{
+    const bk=baliky[bid]; if(!bk) return;
+    (bk.spools||[]).forEach(v=>allSpoolRefs.add(v));
+  });
+  allSpoolRefs.forEach(v=>{
+    const [sec,key,sid]=v.split('|');
+    const sp=(spools[sec+'/'+key]||{})[sid];
+    if(!sp) return;
+    const iso=(ISOMETRIES_DATA[sec]||[]).find(i=>isoKey(i)===key)||key;
+    const bName=sp.balikId&&baliky[sp.balikId]?baliky[sp.balikId].name:'—';
+    rows.push([sec,iso,'SP-'+sp.num,sp.desc||'',{new:'Nový',work:'Vo výrobe',done:'Hotový'}[sp.status]||'',bName]);
+  });
+  rows.sort((a,b)=>a[0].localeCompare(b[0])||a[1].localeCompare(b[1])||(parseInt(a[2].replace('SP-',''))||0)-(parseInt(b[2].replace('SP-',''))||0));
+
+  doc.autoTable({
+    startY:38,
+    head:[['Sekcia','Izometria','Spool','Popis','Stav','Balík']],
+    body:rows,
+    styles:{fontSize:7,cellPadding:2},
+    headStyles:{fillColor:[26,95,168],textColor:255,fontStyle:'bold'},
+    alternateRowStyles:{fillColor:[245,243,240]},
+  });
+
+  // add free material table if exists
+  if((nk.volnyMaterial||[]).length){
+    const matY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 8 : 38;
+    doc.setFontSize(10); doc.text('Voľný materiál:', 14, matY);
+    doc.autoTable({
+      startY: matY+4,
+      head:[['Typ','Rozmer','Materiál','ks','m']],
+      body:(nk.volnyMaterial||[]).map(m=>[m.typ,m.rozmer||'',m.material||'',m.ks||'',m.metre||'']),
+      styles:{fontSize:7,cellPadding:2},
+      headStyles:{fillColor:[122,74,8],textColor:255,fontStyle:'bold'},
+    });
+  }
+  doc.save('Dodaci_list_'+nk.name.replace(/[^a-zA-Z0-9]/g,'_')+'_'+today()+'.pdf');
+}
+
+function exportNakladkaExcel(nid){
+  const nk=nakladky[nid]; if(!nk) return;
+  const rows=[];
+  const allSpoolRefsX = new Set(nk.spools||[]);
+  (nk.balikIds||[]).forEach(bid=>{
+    const bk=baliky[bid]; if(!bk) return;
+    (bk.spools||[]).forEach(v=>allSpoolRefsX.add(v));
+  });
+  allSpoolRefsX.forEach(v=>{
+    const [sec,key,sid]=v.split('|');
+    const sp=(spools[sec+'/'+key]||{})[sid];
+    if(!sp) return;
+    const iso=(ISOMETRIES_DATA[sec]||[]).find(i=>isoKey(i)===key)||key;
+    const bName=sp.balikId&&baliky[sp.balikId]?baliky[sp.balikId].name:'';
+    rows.push({Sekcia:sec,Izometria:iso,Spool:'SP-'+sp.num,Popis:sp.desc||'',Stav:{new:'Nový',work:'Vo výrobe',done:'Hotový'}[sp.status]||'',Balik:bName,DatumOdvozu:nk.date||''});
+  });
+  rows.sort((a,b)=>a.Sekcia.localeCompare(b.Sekcia)||a.Izometria.localeCompare(b.Izometria));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:8},{wch:40},{wch:10},{wch:25},{wch:12},{wch:14},{wch:14}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Nakladka');
+  // add info sheet
+  const info=[{Pole:'Nakladka',Hodnota:nk.name},{Pole:'Datum',Hodnota:nk.date},{Pole:'Poznamka',Hodnota:nk.note},{Pole:'Pocet spoolov',Hodnota:rows.length}];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(info),'Info');
+  XLSX.writeFile(wb,'Nakladka_'+nk.name.replace(/[^a-zA-Z0-9]/g,'_')+'_'+today()+'.xlsx');
+}
+
+// ===== GLOBAL SEARCH =====
+function doSearch(q){
+  const drop=document.getElementById('searchDrop');
+  if(!q||q.length<2){drop.classList.remove('open');return;}
+  const ql=q.toLowerCase().replace(/\s/g,'');
+  const res=[];
+  SECTIONS.forEach(sec=>{
+    (ISOMETRIES_DATA[sec]||[]).forEach(iso=>{
+      // search by any part of the code
+      const isoClean = iso.toLowerCase().replace(/\s/g,'');
+      if(isoClean.includes(ql)) res.push({sec,iso});
+    });
+  });
+  if(!res.length){
+    drop.innerHTML='<div style="padding:10px 14px;font-size:12px;color:var(--text3)">Nič sa nenašlo pre: <strong>'+q+'</strong></div>';
+    drop.classList.add('open');
+    return;
+  }
+  drop.innerHTML='';
+  // group by section
+  const bySection={};
+  res.forEach(r=>{ if(!bySection[r.sec]) bySection[r.sec]=[]; bySection[r.sec].push(r.iso); });
+  
+  // show count header
+  const header=document.createElement('div');
+  header.style.cssText='padding:6px 12px;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border);display:flex;justify-content:space-between';
+  header.innerHTML='<span>Výsledky</span><span><strong>'+res.length+'</strong> nájdených</span>';
+  drop.appendChild(header);
+
+  res.slice(0,30).forEach(({sec,iso})=>{
+    // highlight matched part
+    const qlReg = new RegExp('('+ql.replace(/[-]/g,'\\-')+')', 'gi');
+    const highlighted = iso.replace(qlReg, '<mark style="background:#fff3b0;border-radius:2px">$1</mark>');
+    const item=document.createElement('div');
+    item.className='srd-item';
+    item.style.cssText='padding:8px 12px;cursor:pointer;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border)';
+    item.innerHTML='<span class="srd-sec">'+sec+'</span><span style="font-size:12px;flex:1">'+highlighted+'</span>';
+    item.onmousedown=(e)=>{
+      e.preventDefault();
+      showPage('spooly');
+      switchSec(sec);
+      setTimeout(()=>selectIso(iso),50);
+      document.getElementById('globalSearch').value='';
+      drop.classList.remove('open');
+    };
+    drop.appendChild(item);
+  });
+  if(res.length>30){
+    const more=document.createElement('div');
+    more.style.cssText='padding:7px 12px;font-size:11px;color:var(--text3);text-align:center';
+    more.textContent='+ '+(res.length-30)+' ďalších — upresni hľadanie';
+    drop.appendChild(more);
+  }
+  drop.classList.add('open');
+}
+function closeSearch(){ document.getElementById('searchDrop').classList.remove('open'); }
+
+// ===== ONLINE =====
+function listenOnline(){
+  db.ref('online').on('value',snap=>{
+    const data=snap.val()||{};
+    const now=Date.now();
+    online={};
+    Object.entries(data).forEach(([id,u])=>{ if(now-(u.ts||0)<30000) online[id]=u; });
+    const cnt=Object.keys(online).length;
+    document.getElementById('onlineLabel').textContent=cnt+' online';
+    if(curIso) renderSpoolTable();
+  });
+}
+function updatePresence(){
+  if(!me.name) return;
+  db.ref('online/'+uid).set({name:me.name,ci:me.ci,sec:curSec,iso:curIso||'',ts:Date.now()});
+}
+function startPresence(){
+  updatePresence();
+  setInterval(updatePresence,15000);
+  window.addEventListener('beforeunload',()=>db.ref('online/'+uid).remove());
+  db.ref('online/'+uid).onDisconnect().remove();
+}
+
+
+
+// ===== ČISTENIE UNDEFINED SPOOLOV =====
+function cleanUndefinedSpools(){
+  const toDelete = [];
+  SECTIONS.forEach(sec=>{
+    (ISOMETRIES_DATA[sec]||[]).forEach(iso=>{
+      const k = isoKey(iso);
+      const sps = spools[sec+'/'+k] || {};
+      Object.entries(sps).forEach(([sid,sp])=>{
+        if(!sp.num || sp.num==='' || sp.num==='undefined'){
+          toDelete.push({sec, key:k, sid, iso});
+        }
+      });
+    });
+  });
+  if(!toDelete.length){ alert('Žiadne pokazené spooly nenájdené ✅'); return; }
+  if(!confirm('Nájdených '+toDelete.length+' pokazených spoolov (bez čísla). Zmazať všetky?')) return;
+  let done = 0;
+  toDelete.forEach(({sec,key,sid})=>{
+    db.ref('spools/'+sec+'/'+key+'/'+sid).remove()
+      .then(()=>{ done++; if(done===toDelete.length) alert('Vymazaných: '+done+' pokazených spoolov ✅'); });
+  });
+}
+
+
+// ===== ÚPRAVA NAKLADKY =====
+let editNakId = null;
+
+function editNakladka(nid){
+  editNakId = nid;
+  const nk = nakladky[nid]; if(!nk) return;
+
+  // fill name/date/note fields
+  document.getElementById('enkEditName').value = nk.name||'';
+  document.getElementById('enkEditDate').value = nk.date||'';
+  document.getElementById('enkEditNote').value = nk.note||'';
+
+  // show current spools
+  buildEnkCurrentList(nid);
+
+  // show existing free material
+  const enkMatCur = document.getElementById('enkMatCurrentList');
+  if(enkMatCur) renderMatCurrentList('enkMatCurrentList', nk.volnyMaterial||[], nid);
+  const enkMatNew = document.getElementById('enkMatList');
+  if(enkMatNew) enkMatNew.innerHTML = '';
+
+  // show available baliky
+  buildEnkBalikList(nid);
+  // show available spools to add
+  _enkSelectedSpools = new Set();
+  document.getElementById('enkSpSearch').value='';
+  document.getElementById('enkSecFilter').value='all';
+  buildEnkSpList('','all');
+  openModal('editNakladkaModal');
+}
+
+function buildEnkCurrentList(nid){
+  const el = document.getElementById('enkCurrentList');
+  const nk = nakladky[nid]; if(!nk){ el.innerHTML=''; return; }
+  el.innerHTML='';
+  if(!(nk.spools||[]).length){
+    el.innerHTML='<div style="padding:6px;font-size:11px;color:var(--text3)">Žiadne spooly</div>';
+    return;
+  }
+  (nk.spools||[]).forEach(v=>{
+    const [sec,key,sid] = v.split('|');
+    const sp = (spools[sec+'/'+key]||{})[sid];
+    if(!sp) return;
+    const iso = (ISOMETRIES_DATA[sec]||[]).find(i=>isoKey(i)===key)||key;
+    const item = document.createElement('div');
+    item.className = 'sp-check-item';
+    item.style.justifyContent = 'space-between';
+    const delBtn = document.createElement('button');
+    delBtn.className = 'sbtn del';
+    delBtn.textContent = '✕';
+    delBtn.onclick = () => removeFromNakladka(nid, v);
+    item.innerHTML = '<span style="font-size:12px"><strong>SP-'+sp.num+'</strong></span>'
+      +'<span class="sp-check-sub">'+sec+' / '+iso+'</span>';
+    item.appendChild(delBtn);
+    el.appendChild(item);
+  });
+}
+
+function removeFromNakladka(nid, spoolRef){
+  const nk = nakladky[nid]; if(!nk) return;
+  const [sec,key,sid] = spoolRef.split('|');
+  // remove from nakladka spools list
+  const newSpools = (nk.spools||[]).filter(s=>s!==spoolRef);
+  db.ref('nakladky/'+nid+'/spools').set(newSpools);
+  // free the spool
+  db.ref('spools/'+sec+'/'+key+'/'+sid+'/nakladkaId').set('');
+  // refresh current list after short delay
+  setTimeout(()=>buildEnkCurrentList(nid), 400);
+}
+
+function buildEnkSpList(q, sec){
+  const el = document.getElementById('enkSpList');
+  el.innerHTML='';
+  const ql = q.toLowerCase();
+  // show free spools + spools not in THIS nakladka
+  const all = getAllSpools().filter(s=>!s.nakladkaId || s.nakladkaId===editNakId);
+  // exclude already in this nakladka
+  const nk = nakladky[editNakId]||{};
+  const alreadyIn = new Set((nk.spools||[]));
+  let any = false;
+  all.forEach(sp=>{
+    const ref = sp.sec+'|'+sp.key+'|'+sp.sid;
+    if(alreadyIn.has(ref)) return;
+    if(sec!=='all'&&sp.sec!==sec) return;
+    const lbl = 'SP-'+sp.num+' '+sp.iso;
+    if(ql&&!lbl.toLowerCase().includes(ql)) return;
+    const item = document.createElement('label');
+    item.className = 'sp-check-item';
+    item.innerHTML = '<input type="checkbox" value="'+ref+'" />'
+      +'<span class="sp-check-label">SP-'+sp.num+'</span>'
+      +'<span class="sp-check-sub">'+sp.sec+' / '+sp.iso+'</span>';
+    el.appendChild(item); any=true;
+  });
+  if(!any) el.innerHTML='<div style="padding:8px;font-size:11px;color:var(--text3)">Žiadne dostupné spooly</div>';
+}
+
+function filterEnkSp(q){
+  buildEnkSpList(q, document.getElementById('enkSecFilter').value);
+}
+
+function saveEditNakladka(){
+  const nid = editNakId; if(!nid) return;
+  const nk = nakladky[nid]; if(!nk) return;
+  const checked = Array.from(_enkSelectedSpools);
+  const newMat = getMatRows('enkMatList');
+  const checkedBaliky2 = Array.from(document.querySelectorAll('input[name="enkBalik"]:checked')).map(x=>x.value);
+
+  // save name/date/note - only fields that have value
+  const newName = (document.getElementById('enkEditName').value||'').trim();
+  const newDate = document.getElementById('enkEditDate').value||'';
+  const newNote = (document.getElementById('enkEditNote').value||'').trim();
+  if(newName) db.ref('nakladky/'+nid+'/name').set(newName);
+  if(newDate) db.ref('nakladky/'+nid+'/date').set(newDate);
+  db.ref('nakladky/'+nid+'/note').set(newNote);
+
+  if(!checked.length && !newMat.length && !checkedBaliky2.length){
+    closeModal('editNakladkaModal'); return;
+  }
+
+  // add new baliky
+  if(checkedBaliky2.length){
+    const newBalikIds = [...(nk.balikIds||[]), ...checkedBaliky2];
+    db.ref('nakladky/'+nid+'/balikIds').set(newBalikIds);
+    checkedBaliky2.forEach(bid=>{
+      const bk = baliky[bid]; if(!bk) return;
+      db.ref('baliky/'+bid+'/nakladkaId').set(nid);
+      (bk.spools||[]).forEach(v=>{
+        const [sec,key,sid]=v.split('|');
+        db.ref('spools/'+sec+'/'+key+'/'+sid+'/nakladkaId').set(nid);
+      });
+    });
+  }
+
+  // add new spools
+  if(checked.length){
+    const newSpools = [...(nk.spools||[]), ...checked];
+    db.ref('nakladky/'+nid+'/spools').set(newSpools);
+    checked.forEach(v=>{
+      const [sec,key,sid] = v.split('|');
+      db.ref('spools/'+sec+'/'+key+'/'+sid+'/nakladkaId').set(nid);
+    });
+  }
+  // save new free material
+  if(newMat.length){
+    const existingMat = nakladky[nid].volnyMaterial||[];
+    db.ref('nakladky/'+nid+'/volnyMaterial').set([...existingMat,...newMat]);
+  }
+  closeModal('editNakladkaModal');
+}
+
+
+// ===== VOĽNÝ MATERIÁL =====
+function addMatRow(containerId, data){
+  const container = document.getElementById(containerId);
+  if(!container) return;
+  const row = document.createElement('div');
+  row.className = 'mat-row';
+  row.innerHTML = `
+    <input class="mat-inp" placeholder="Typ (napr. Pipe, Fitting)" style="flex:2;min-width:100px" value="${data&&data.typ||''}" data-field="typ" />
+    <input class="mat-inp" placeholder="Rozmer (napr. 219,1x6)" style="flex:2;min-width:90px" value="${data&&data.rozmer||''}" data-field="rozmer" />
+    <input class="mat-inp" placeholder="Materiál (napr. 1.4307)" style="flex:2;min-width:90px" value="${data&&data.material||''}" data-field="material" />
+    <input class="mat-inp" placeholder="ks" style="width:50px" value="${data&&data.ks||''}" data-field="ks" type="number" min="0" />
+    <input class="mat-inp" placeholder="m" style="width:50px" value="${data&&data.metre||''}" data-field="metre" type="number" min="0" step="0.1" />
+    <button class="mat-del" onclick="this.parentElement.remove()" title="Odstrániť">✕</button>`;
+  container.appendChild(row);
+}
+
+function getMatRows(containerId){
+  const container = document.getElementById(containerId);
+  if(!container) return [];
+  const rows = [];
+  container.querySelectorAll('.mat-row').forEach(row=>{
+    const typ = row.querySelector('[data-field="typ"]').value.trim();
+    if(!typ) return;
+    rows.push({
+      typ,
+      rozmer: row.querySelector('[data-field="rozmer"]').value.trim(),
+      material: row.querySelector('[data-field="material"]').value.trim(),
+      ks: row.querySelector('[data-field="ks"]').value.trim(),
+      metre: row.querySelector('[data-field="metre"]').value.trim(),
+    });
+  });
+  return rows;
+}
+
+function renderMatList(containerId, items){
+  const container = document.getElementById(containerId);
+  if(!container) return;
+  container.innerHTML = '';
+  (items||[]).forEach(item => addMatRow(containerId, item));
+}
+
+function renderMatCurrentList(containerId, items, nid, bid){
+  const container = document.getElementById(containerId);
+  if(!container) return;
+  container.innerHTML = '';
+  if(!(items||[]).length) return;
+  const title = document.createElement('div');
+  title.style.cssText = 'font-size:11px;color:var(--text2);margin-bottom:4px';
+  title.textContent = 'Existujúci materiál:';
+  container.appendChild(title);
+  items.forEach((item,idx)=>{
+    const row = document.createElement('div');
+    row.className = 'mat-row';
+    row.style.justifyContent = 'space-between';
+    row.innerHTML = `<span style="font-size:12px;flex:1"><strong>${item.typ}</strong> ${item.rozmer} ${item.material}</span>`
+      +`<span style="font-size:11px;color:var(--text3)">${item.ks?item.ks+' ks':''}${item.metre?' / '+item.metre+' m':''}</span>`
+      +(nid ? `<button class="mat-del" onclick="removeMatFromNakladka('${nid}',${idx})">✕</button>` 
+             : bid ? `<button class="mat-del" onclick="removeMatFromBalik('${bid}',${idx})">✕</button>` : '');
+    container.appendChild(row);
+  });
+}
+
+function removeMatFromNakladka(nid, idx){
+  const nk = nakladky[nid]; if(!nk) return;
+  const mat = [...(nk.volnyMaterial||[])];
+  mat.splice(idx,1);
+  db.ref('nakladky/'+nid+'/volnyMaterial').set(mat.length ? mat : null);
+  setTimeout(()=>renderMatCurrentList('enkMatCurrentList', mat, nid), 300);
+}
+
+function buildEnkBalikList(nid){
+  const el = document.getElementById('enkBalikList');
+  if(!el) return;
+  el.innerHTML='';
+  const nk = nakladky[nid]||{};
+  const alreadyIn = new Set(nk.balikIds||[]);
+  const entries = Object.entries(baliky).filter(([bid])=>!alreadyIn.has(bid)&&!baliky[bid].nakladkaId);
+  if(!entries.length){
+    el.innerHTML='<div style="padding:6px;font-size:11px;color:var(--text3)">Žiadne dostupné balíky</div>';
+    return;
+  }
+  entries.forEach(([bid,bk])=>{
+    const item=document.createElement('label');
+    item.className='sp-check-item';
+    item.innerHTML=`<input type="checkbox" value="${bid}" name="enkBalik" /><span class="sp-check-label">📦 ${bk.name}</span><span class="sp-check-sub">${(bk.spools||[]).length} spoolov</span>`;
+    el.appendChild(item);
+  });
+}
+
+
+// ===== ÚPRAVA BALÍKA =====
+let editBalikId = null;
+
+function editBalik(bid){
+  editBalikId = bid;
+  const bk = baliky[bid]; if(!bk) return;
+  document.getElementById('ebName').value = bk.name||'';
+  buildEbCurrentList(bid);
+  document.getElementById('ebSpSearch').value='';
+  document.getElementById('ebSecFilter').value='all';
+  buildEbSpList('','all');
+  const ebMatCur = document.getElementById('ebMatCurrentList');
+  if(ebMatCur) renderMatCurrentList('ebMatCurrentList', bk.volnyMaterial||[], null, bid);
+  const ebMatNew = document.getElementById('ebMatList');
+  if(ebMatNew) ebMatNew.innerHTML='';
+  openModal('editBalikModal');
+}
+
+function buildEbCurrentList(bid){
+  const el = document.getElementById('ebCurrentList');
+  if(!el) return;
+  el.innerHTML='';
+  const bk = baliky[bid]; if(!bk) return;
+  const sps = bk.spools||[];
+  if(!sps.length){
+    el.innerHTML='<div style="padding:6px;font-size:11px;color:var(--text3)">Žiadne spooly</div>';
+    return;
+  }
+  sps.forEach(v=>{
+    const [sec,key,sid]=v.split('|');
+    const sp=(spools[sec+'/'+key]||{})[sid];
+    if(!sp) return;
+    const iso=(ISOMETRIES_DATA[sec]||[]).find(i=>isoKey(i)===key)||key;
+    const item=document.createElement('div');
+    item.className='sp-check-item';
+    item.style.justifyContent='space-between';
+    const delBtn=document.createElement('button');
+    delBtn.className='sbtn del'; delBtn.textContent='✕';
+    delBtn.onclick=()=>removeSpoolFromBalik(bid,v);
+    item.innerHTML='<span style="font-size:12px"><strong>SP-'+sp.num+'</strong></span>'
+      +'<span class="sp-check-sub">'+sec+' / '+iso+'</span>';
+    item.appendChild(delBtn);
+    el.appendChild(item);
+  });
+}
+
+function removeSpoolFromBalik(bid, spoolRef){
+  const bk=baliky[bid]; if(!bk) return;
+  const [sec,key,sid]=spoolRef.split('|');
+  const newSpools=(bk.spools||[]).filter(s=>s!==spoolRef);
+  db.ref('baliky/'+bid+'/spools').set(newSpools);
+  db.ref('spools/'+sec+'/'+key+'/'+sid+'/balikId').set('');
+  setTimeout(()=>buildEbCurrentList(bid), 400);
+}
+
+function buildEbSpList(q, sec){
+  const el=document.getElementById('ebSpList');
+  if(!el) return;
+  el.innerHTML='';
+  const ql=q.toLowerCase();
+  const bk=baliky[editBalikId]||{};
+  const alreadyIn=new Set(bk.spools||[]);
+  const all=getFreeSpools();
+  let any=false;
+  all.forEach(sp=>{
+    const ref=sp.sec+'|'+sp.key+'|'+sp.sid;
+    if(alreadyIn.has(ref)) return;
+    if(sec!=='all'&&sp.sec!==sec) return;
+    const lbl='SP-'+sp.num+' '+sp.iso;
+    if(ql&&!lbl.toLowerCase().includes(ql)) return;
+    const item=document.createElement('label');
+    item.className='sp-check-item';
+    item.innerHTML='<input type="checkbox" value="'+ref+'" name="ebSpool" />'
+      +'<span class="sp-check-label">SP-'+sp.num+'</span>'
+      +'<span class="sp-check-sub">'+sp.sec+' / '+sp.iso+'</span>';
+    el.appendChild(item); any=true;
+  });
+  if(!any) el.innerHTML='<div style="padding:8px;font-size:11px;color:var(--text3)">Žiadne voľné spooly</div>';
+}
+
+function filterEbSp(q){
+  buildEbSpList(q, document.getElementById('ebSecFilter').value);
+}
+
+function saveEditBalik(){
+  const bid=editBalikId; if(!bid) return;
+  const bk=baliky[bid]; if(!bk) return;
+  const checked=Array.from(document.querySelectorAll('input[name="ebSpool"]:checked')).map(x=>x.value);
+  const newMat=getMatRows('ebMatList');
+  const newName=(document.getElementById('ebName').value||'').trim();
+
+  // save name
+  if(newName) db.ref('baliky/'+bid+'/name').set(newName);
+
+  // add new spools
+  if(checked.length){
+    const newSpools=[...(bk.spools||[]),...checked];
+    db.ref('baliky/'+bid+'/spools').set(newSpools);
+    checked.forEach(v=>{
+      const [sec,key,sid]=v.split('|');
+      db.ref('spools/'+sec+'/'+key+'/'+sid+'/balikId').set(bid);
+    });
+  }
+
+  // save material
+  if(newMat.length){
+    const existing=bk.volnyMaterial||[];
+    db.ref('baliky/'+bid+'/volnyMaterial').set([...existing,...newMat]);
+  }
+
+  closeModal('editBalikModal');
+}
+
+
+function removeMatFromBalik(bid, idx){
+  const bk=baliky[bid]; if(!bk) return;
+  const mat=[...(bk.volnyMaterial||[])];
+  mat.splice(idx,1);
+  db.ref('baliky/'+bid+'/volnyMaterial').set(mat.length?mat:null);
+  setTimeout(()=>renderMatCurrentList('ebMatCurrentList', mat, null, bid), 300);
+}
+
+
+// ===== DETAIL MODALS =====
+function showBalikDetail(bid){
+  const bk = baliky[bid]; if(!bk) return;
+  document.getElementById('bdTitle').textContent = '📦 ' + bk.name;
+  const sps = bk.spools||[];
+  const mat = bk.volnyMaterial||[];
+  let html = '';
+
+  if(sps.length){
+    html += '<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px">Spooly ('+sps.length+')</div>';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px">';
+    html += '<thead><tr><th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--border2);color:var(--text2);font-size:11px">SP</th><th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--border2);color:var(--text2);font-size:11px">Izometria</th><th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--border2);color:var(--text2);font-size:11px">Sekcia</th><th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--border2);color:var(--text2);font-size:11px">Stav</th></tr></thead><tbody>';
+    sps.forEach(v=>{
+      const [sec,key,sid]=v.split('|');
+      const sp=(spools[sec+'/'+key]||{})[sid];
+      if(!sp) return;
+      const iso=(ISOMETRIES_DATA[sec]||[]).find(i=>isoKey(i)===key)||key;
+      const stL={new:'Nový',work:'Výroba',done:'Hotový'}[sp.status]||'';
+      html += '<tr><td style="padding:5px 8px;border-bottom:1px solid var(--border)"><strong>SP-'+sp.num+'</strong></td><td style="padding:5px 8px;border-bottom:1px solid var(--border);font-size:11px">'+iso+'</td><td style="padding:5px 8px;border-bottom:1px solid var(--border)">'+sec+'</td><td style="padding:5px 8px;border-bottom:1px solid var(--border)">'+stL+'</td></tr>';
+    });
+    html += '</tbody></table>';
+  } else {
+    html += '<div style="font-size:12px;color:var(--text3);margin-bottom:10px">Žiadne spooly</div>';
+  }
+
+  if(mat.length){
+    html += '<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px">Voľný materiál ('+mat.length+')</div>';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:12px">';
+    html += '<thead><tr><th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--border2);color:var(--text2);font-size:11px">Typ</th><th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--border2);color:var(--text2);font-size:11px">Rozmer</th><th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--border2);color:var(--text2);font-size:11px">Materiál</th><th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--border2);color:var(--text2);font-size:11px">ks</th><th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--border2);color:var(--text2);font-size:11px">m</th></tr></thead><tbody>';
+    mat.forEach(m=>{
+      html += '<tr><td style="padding:5px 8px;border-bottom:1px solid var(--border)">'+m.typ+'</td><td style="padding:5px 8px;border-bottom:1px solid var(--border)">'+( m.rozmer||'')+'</td><td style="padding:5px 8px;border-bottom:1px solid var(--border)">'+(m.material||'')+'</td><td style="padding:5px 8px;border-bottom:1px solid var(--border)">'+(m.ks||'')+'</td><td style="padding:5px 8px;border-bottom:1px solid var(--border)">'+(m.metre||'')+'</td></tr>';
+    });
+    html += '</tbody></table>';
+  }
+
+  if(bk.creator) html += '<div style="font-size:11px;color:var(--text3);margin-top:10px">Vytvoril: '+bk.creator+'</div>';
+  document.getElementById('bdContent').innerHTML = html;
+  openModal('balikDetailModal');
+}
+
+function showNakladkaDetail(nid){
+  const nk = nakladky[nid]; if(!nk) return;
+  document.getElementById('ndTitle').textContent = '🚛 ' + nk.name;
+
+  // collect all spools (direct + from baliky)
+  const allRefs = new Set(nk.spools||[]);
+  (nk.balikIds||[]).forEach(bid=>{
+    const bk=baliky[bid]; if(!bk) return;
+    (bk.spools||[]).forEach(v=>allRefs.add(v));
+  });
+
+  let html = '<div style="font-size:12px;color:var(--text2);margin-bottom:12px">';
+  if(nk.date) html += '📅 '+nk.date+'&nbsp;&nbsp;';
+  if(nk.note) html += '🚚 '+nk.note;
+  html += '</div>';
+
+  // baliky section
+  if((nk.balikIds||[]).length){
+    html += '<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px">Balíky</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">';
+    (nk.balikIds||[]).forEach(bid=>{
+      const bk=baliky[bid];
+      if(bk) html += '<span class="pkg-chip">📦 '+bk.name+' ('+(bk.spools||[]).length+' sp)</span>';
+    });
+    html += '</div>';
+  }
+
+  // spools table
+  if(allRefs.size){
+    html += '<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px">Spooly ('+allRefs.size+')</div>';
+    html += '<div style="max-height:220px;overflow-y:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
+    html += '<thead><tr><th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--border2);color:var(--text2);font-size:11px;background:var(--bg);position:sticky;top:0">SP</th><th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--border2);color:var(--text2);font-size:11px;background:var(--bg);position:sticky;top:0">Izometria</th><th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--border2);color:var(--text2);font-size:11px;background:var(--bg);position:sticky;top:0">Sekcia</th><th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--border2);color:var(--text2);font-size:11px;background:var(--bg);position:sticky;top:0">Balík</th></tr></thead><tbody>';
+    allRefs.forEach(v=>{
+      const [sec,key,sid]=v.split('|');
+      const sp=(spools[sec+'/'+key]||{})[sid];
+      if(!sp) return;
+      const iso=(ISOMETRIES_DATA[sec]||[]).find(i=>isoKey(i)===key)||key;
+      const bName=sp.balikId&&baliky[sp.balikId]?baliky[sp.balikId].name:'—';
+      html += '<tr><td style="padding:5px 8px;border-bottom:1px solid var(--border)"><strong>SP-'+sp.num+'</strong></td><td style="padding:5px 8px;border-bottom:1px solid var(--border);font-size:11px">'+iso+'</td><td style="padding:5px 8px;border-bottom:1px solid var(--border)">'+sec+'</td><td style="padding:5px 8px;border-bottom:1px solid var(--border)">'+bName+'</td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+
+  // free material
+  const mat = nk.volnyMaterial||[];
+  if(mat.length){
+    html += '<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin:12px 0 6px">Voľný materiál</div>';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:12px">';
+    html += '<thead><tr><th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--border2);color:var(--text2);font-size:11px">Typ</th><th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--border2);color:var(--text2);font-size:11px">Rozmer</th><th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--border2);color:var(--text2);font-size:11px">Materiál</th><th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--border2);color:var(--text2);font-size:11px">ks</th><th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--border2);color:var(--text2);font-size:11px">m</th></tr></thead><tbody>';
+    mat.forEach(m=>{
+      html += '<tr><td style="padding:5px 8px;border-bottom:1px solid var(--border)">'+m.typ+'</td><td style="padding:5px 8px;border-bottom:1px solid var(--border)">'+(m.rozmer||'')+'</td><td style="padding:5px 8px;border-bottom:1px solid var(--border)">'+(m.material||'')+'</td><td style="padding:5px 8px;border-bottom:1px solid var(--border)">'+(m.ks||'')+'</td><td style="padding:5px 8px;border-bottom:1px solid var(--border)">'+(m.metre||'')+'</td></tr>';
+    });
+    html += '</tbody></table>';
+  }
+
+  if(nk.creator) html += '<div style="font-size:11px;color:var(--text3);margin-top:10px">Vytvoril: '+nk.creator+'</div>';
+  document.getElementById('ndContent').innerHTML = html;
+  openModal('nakladkaDetailModal');
+}
+
+
+// ===== ZLÚČENIE NAKLADIEK =====
+let mergeTargetId = null;
+
+function openMergeModal(nid){
+  mergeTargetId = nid;
+  const nk = nakladky[nid]; if(!nk) return;
+  document.getElementById('mergeInfo').innerHTML = 
+    'Cieľová nakladka: <strong>' + nk.name + '</strong>' +
+    (nk.date ? ' · ' + nk.date : '') +
+    '<br><span style="font-size:11px;color:var(--text3)">Obsahuje: ' + (nk.spools||[]).length + ' spoolov, ' + (nk.balikIds||[]).length + ' balíkov, ' + (nk.volnyMaterial||[]).length + ' mat. položiek</span>';
+
+  const el = document.getElementById('mergeNakList');
+  el.innerHTML = '';
+  const others = Object.entries(nakladky).filter(([id]) => id !== nid);
+  if(!others.length){
+    el.innerHTML = '<div style="padding:8px;font-size:11px;color:var(--text3)">Žiadne iné nakladky</div>';
+  } else {
+    others.forEach(([id, nk2]) => {
+      const item = document.createElement('label');
+      item.className = 'sp-check-item';
+      item.innerHTML = '<input type="radio" name="mergeNak" value="' + id + '" />'
+        + '<span class="sp-check-label">' + nk2.name + '</span>'
+        + '<span class="sp-check-sub">' + (nk2.date||'') + ' · ' + (nk2.spools||[]).length + ' sp · ' + (nk2.balikIds||[]).length + ' bal · ' + (nk2.volnyMaterial||[]).length + ' mat.</span>';
+      el.appendChild(item);
+    });
+  }
+  openModal('mergeModal');
+}
+
+async function doMerge(){
+  const nid = mergeTargetId; if(!nid) return;
+  const sourceRadio = document.querySelector('input[name="mergeNak"]:checked');
+  if(!sourceRadio){ alert('Vyber nakladku na zlúčenie!'); return; }
+  const sid = sourceRadio.value;
+
+  const target = nakladky[nid];
+  const source = nakladky[sid];
+  if(!target || !source){ alert('Chyba: nakladka nenájdená'); return; }
+
+  if(!confirm('Zlúčiť "' + source.name + '" do "' + target.name + '"?\n\nObsah "' + source.name + '" sa presunie a táto nakladka sa zmaže.')) return;
+
+  // merge spools
+  const targetSpools = new Set(target.spools||[]);
+  (source.spools||[]).forEach(v => {
+    if(!targetSpools.has(v)){
+      targetSpools.add(v);
+      const [sec,key,spId] = v.split('|');
+      db.ref('spools/'+sec+'/'+key+'/'+spId+'/nakladkaId').set(nid);
+    }
+  });
+
+  // merge balikIds
+  const targetBaliks = new Set(target.balikIds||[]);
+  (source.balikIds||[]).forEach(bid => {
+    if(!targetBaliks.has(bid)){
+      targetBaliks.add(bid);
+      db.ref('baliky/'+bid+'/nakladkaId').set(nid);
+    }
+  });
+
+  // merge volnyMaterial
+  const targetMat = [...(target.volnyMaterial||[]), ...(source.volnyMaterial||[])];
+
+  // update target
+  db.ref('nakladky/'+nid+'/spools').set(Array.from(targetSpools));
+  db.ref('nakladky/'+nid+'/balikIds').set(Array.from(targetBaliks));
+  if(targetMat.length) db.ref('nakladky/'+nid+'/volnyMaterial').set(targetMat);
+
+  // add note about merge
+  const mergeNote = (target.note||'') + (target.note ? ' + ' : '') + source.name;
+  db.ref('nakladky/'+nid+'/note').set(mergeNote);
+
+  // delete source nakladka (spools/baliks already reassigned)
+  db.ref('nakladky/'+sid).remove();
+
+  closeModal('mergeModal');
+  alert('✅ Zlúčené! "' + source.name + '" bola spojená s "' + target.name + '".');
+}
+
+// ===== UTILS =====
+function today(){ return new Date().toISOString().slice(0,10); }
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-bg').forEach(mb=>mb.addEventListener('click',e=>{if(e.target===mb)mb.classList.remove('open');}));
+initAvPick();
+// Auto-login from saved session
+(function(){
+  try {
+    const saved = JSON.parse(localStorage.getItem('isoManagerUser')||'null');
+    if(saved && saved.name){
+      me.name = saved.name;
+      me.ci = saved.ci || 0;
+      // highlight saved color
+      document.querySelectorAll('.av-opt').forEach((el,i) => el.classList.toggle('sel', i===me.ci));
+      document.getElementById('userNameInp').value = saved.name;
+      // auto-enter
+      document.getElementById('userSetup').style.display='none';
+      document.getElementById('app').style.display='flex';
+      window.addEventListener('fbReady', initApp, {once:true});
+      if(window.DB) initApp();
+    }
+  } catch(e){}
+})();
+
+</script>
+
+<!-- MODAL: Upraviť nakladku --><!-- MODAL: Upraviť nakladku -->
+<div class="modal-bg" id="editNakladkaModal">
+  <div class="modal">
+    <h3>✏️ Upraviť nakladku</h3>
+    <div class="m-row">
+      <div style="flex:1;min-width:120px">
+        <label class="m-label">Názov nakladky</label>
+        <input class="m-inp" id="enkEditName" placeholder="Názov" />
+      </div>
+      <div style="flex:1;min-width:120px">
+        <label class="m-label">Dátum odvozu</label>
+        <input class="m-inp" type="date" id="enkEditDate" />
+      </div>
+      <div style="flex:1;min-width:120px">
+        <label class="m-label">Poznámka / dopravca</label>
+        <input class="m-inp" id="enkEditNote" placeholder="napr. DHL..." />
+      </div>
+    </div>
+    <div class="m-sec-title">Aktuálne spooly v nakladke</div>
+    <div id="enkCurrentList" style="max-height:140px;overflow-y:auto;border:1px solid var(--border2);border-radius:var(--r);padding:6px;margin-bottom:8px"></div>
+    <div class="m-sec-title">Pridať balíky</div>
+    <div class="spool-check-list" id="enkBalikList" style="max-height:120px;margin-bottom:8px"></div>
+    <div class="m-sec-title">Pridať ďalšie spooly</div>
+    <div style="display:flex;gap:6px;margin-bottom:6px">
+      <input class="m-inp" id="enkSpSearch" placeholder="Hľadaj spool..." oninput="filterEnkSp(this.value)" style="flex:1" />
+      <select class="m-inp" id="enkSecFilter" onchange="filterEnkSp(document.getElementById('enkSpSearch').value)" style="width:90px">
+        <option value="all">Všetky</option>
+        <option value="SUL">SUL</option><option value="FLA">FLA</option>
+        <option value="LIG">LIG</option><option value="DRY">DRY</option><option value="LHT">LHT</option>
+      </select>
+    </div>
+    <div class="spool-check-list" id="enkSpList"></div>
+    <div class="m-sec-title" style="margin-top:12px">Voľný materiál</div>
+    <div id="enkMatCurrentList" style="margin-bottom:6px"></div>
+    <div id="enkMatList" style="margin-bottom:6px"></div>
+    <button class="btn" onclick="addMatRow('enkMatList')" style="width:100%;justify-content:center;margin-bottom:4px">＋ Pridať materiál</button>
+    <div class="m-foot">
+      <button class="btn" onclick="closeModal('editNakladkaModal')">Zavrieť</button>
+      <button class="btn btn-purple" onclick="saveEditNakladka()">💾 Uložiť zmeny</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Upraviť balík -->
+<div class="modal-bg" id="editBalikModal">
+  <div class="modal">
+    <h3>✏️ Upraviť balík</h3>
+    <div class="m-row">
+      <div style="flex:1">
+        <label class="m-label">Názov balíka</label>
+        <input class="m-inp" id="ebName" placeholder="Názov balíka" />
+      </div>
+    </div>
+    <div class="m-sec-title">Aktuálne spooly</div>
+    <div id="ebCurrentList" style="max-height:130px;overflow-y:auto;border:1px solid var(--border2);border-radius:var(--r);padding:6px;margin-bottom:8px"></div>
+    <div class="m-sec-title">Pridať ďalšie spooly</div>
+    <div style="display:flex;gap:6px;margin-bottom:6px">
+      <input class="m-inp" id="ebSpSearch" placeholder="Hľadaj spool..." oninput="filterEbSp(this.value)" style="flex:1" />
+      <select class="m-inp" id="ebSecFilter" onchange="filterEbSp(document.getElementById('ebSpSearch').value)" style="width:90px">
+        <option value="all">Všetky</option>
+        <option value="SUL">SUL</option><option value="FLA">FLA</option>
+        <option value="LIG">LIG</option><option value="DRY">DRY</option><option value="LHT">LHT</option>
+      </select>
+    </div>
+    <div class="spool-check-list" id="ebSpList"></div>
+    <div class="m-sec-title" style="margin-top:10px">Voľný materiál</div>
+    <div id="ebMatCurrentList" style="margin-bottom:6px"></div>
+    <div id="ebMatList" style="margin-bottom:6px"></div>
+    <button class="btn" onclick="addMatRow('ebMatList')" style="width:100%;justify-content:center;margin-bottom:4px">＋ Pridať materiál</button>
+    <div class="m-foot">
+      <button class="btn" onclick="closeModal('editBalikModal')">Zavrieť</button>
+      <button class="btn btn-amber" onclick="saveEditBalik()">💾 Uložiť zmeny</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Detail balíka -->
+<div class="modal-bg" id="balikDetailModal">
+  <div class="modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h3 id="bdTitle">Detail balíka</h3>
+      <button onclick="closeModal('balikDetailModal')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2)">✕</button>
+    </div>
+    <div id="bdContent"></div>
+  </div>
+</div>
+
+<!-- MODAL: Detail nakladky -->
+<div class="modal-bg" id="nakladkaDetailModal">
+  <div class="modal" style="width:600px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h3 id="ndTitle">Detail nakladky</h3>
+      <button onclick="closeModal('nakladkaDetailModal')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2)">✕</button>
+    </div>
+    <div id="ndContent"></div>
+  </div>
+</div>
+
+<!-- MODAL: Zlúčiť nakladky -->
+<div class="modal-bg" id="mergeModal">
+  <div class="modal" style="width:500px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h3>🔀 Zlúčiť nakladky</h3>
+      <button onclick="closeModal('mergeModal')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2)">✕</button>
+    </div>
+    <div id="mergeInfo" style="font-size:12px;color:var(--text2);margin-bottom:12px;padding:8px 10px;background:var(--bg);border-radius:var(--r)"></div>
+    <div class="m-sec-title">Vyber nakladku na zlúčenie</div>
+    <p style="font-size:11px;color:var(--text3);margin-bottom:8px">Obsah vybranej nakladky sa presunie do tejto. Vybraná nakladka sa zmaže.</p>
+    <div class="spool-check-list" id="mergeNakList" style="max-height:200px"></div>
+    <div class="m-foot">
+      <button class="btn" onclick="closeModal('mergeModal')">Zrušiť</button>
+      <button class="btn btn-purple" onclick="doMerge()">🔀 Zlúčiť</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
