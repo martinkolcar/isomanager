@@ -2543,6 +2543,11 @@ function saveBalik(){
   checked.forEach(v=>{
     const [sec,key,sid]=v.split('|');
     db.ref('spools/'+sec+'/'+key+'/'+sid+'/balikId').set(bid);
+    db.ref('spools/'+sec+'/'+key+'/'+sid).update({
+      vyvezene: true,
+      vyvezeneKto: me.name,
+      vyvezeneKedy: new Date().toLocaleString('sk-SK')
+    });
   });
   closeModal('balikModal');
 }
@@ -2819,14 +2824,16 @@ function renderPrehlad(){
       const nName=nk?`<span class="nakladka-chip">${nk.name}</span>`:'—';
       const nDate=nk?nk.date:'';
       const ped = (typeof PED_DATA!=="undefined"&&PED_DATA[sp.sec]&&PED_DATA[sp.sec][sp.iso])||'';
+      const stavCell = sp.vyvezene 
+        ? '<span style="color:var(--green);font-size:16px">✅</span>'
+        : '<span class="'+( stC[sp.status]||'st-new')+'">'+( stL[sp.status]||'Nový')+'</span>';
       return `<tr>
         <td>${sp.sec}</td>
         <td style="font-size:11px">${sp.iso}</td>
         <td style="font-size:11px;color:var(--blue-dark);white-space:nowrap">${ped}</td>
         <td><strong>SP-${sp.num}</strong></td>
         <td>${sp.desc||'—'}</td>
-        <td><span class="${stC[sp.status]||'st-new'}">${stL[sp.status]||'Nový'}</span></td>
-        <td style="text-align:center">${sp.vyvezene ? '✅' : '—'}</td>
+        <td>${stavCell}</td>
         <td>${bName}</td>
         <td style="font-size:11px;color:var(--text3)">${sp.creator||'—'}</td>
         <td>${nName}</td>
@@ -3384,6 +3391,11 @@ function saveEditBalik(){
     checked.forEach(v=>{
       const [sec,key,sid]=v.split('|');
       db.ref('spools/'+sec+'/'+key+'/'+sid+'/balikId').set(bid);
+      db.ref('spools/'+sec+'/'+key+'/'+sid).update({
+        vyvezene: true,
+        vyvezeneKto: me.name,
+        vyvezeneKedy: new Date().toLocaleString('sk-SK')
+      });
     });
   }
 
