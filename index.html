@@ -373,7 +373,11 @@ tr:hover td{background:var(--surface2)}
       <button class="filter-chip" onclick="setPrehladFilter('balik',this)">V balíku</button>
       <button class="filter-chip" onclick="setPrehladFilter('nakladka',this)">V nakladke</button>
       <button class="filter-chip" onclick="setPrehladFilter('vyvezene',this)">Vyvezené</button>
-      <input class="sb-inp" style="width:180px" placeholder="Hľadaj..." oninput="prehladSearch=this.value;renderPrehlad()" />
+      <input class="sb-inp" style="width:140px" placeholder="Hľadaj..." oninput="prehladSearch=this.value;renderPrehlad()" />
+      <select class="sb-inp" style="width:110px" id="filterPed" onchange="renderPrehlad()"><option value="">PED (všetky)</option></select>
+      <select class="sb-inp" style="width:120px" id="filterBalik" onchange="renderPrehlad()"><option value="">Balík (všetky)</option></select>
+      <select class="sb-inp" style="width:130px" id="filterNakladka" onchange="renderPrehlad()"><option value="">Nakladka (všetky)</option></select>
+      <select class="sb-inp" style="width:120px" id="filterDatum" onchange="renderPrehlad()"><option value="">Dátum (všetky)</option></select>
       <button class="btn btn-green" onclick="exportPrehladExcel()">📊 Excel</button>
       <button class="btn btn-red" onclick="cleanUndefinedSpools()" title="Zmaže všetky spooly bez čísla">🧹 Vyčistiť</button>
     </div>
@@ -2798,17 +2802,49 @@ function setPrehladFilter(f,el){
   renderPrehlad();
 }
 
+function populatePrehladFilters(all){
+  const pedEl = document.getElementById('filterPed');
+  const balikEl = document.getElementById('filterBalik');
+  const nakEl = document.getElementById('filterNakladka');
+  const datEl = document.getElementById('filterDatum');
+  if(!pedEl) return;
+
+  const pedVal = pedEl.value;
+  const balikVal = balikEl.value;
+  const nakVal = nakEl.value;
+  const datVal = datEl.value;
+
+  const peds = [...new Set(all.map(sp=>(typeof PED_DATA!=="undefined"&&PED_DATA[sp.sec]&&PED_DATA[sp.sec][sp.iso])||'').filter(Boolean))].sort();
+  const baliks = [...new Set(all.map(sp=>sp.balikId&&baliky[sp.balikId]?baliky[sp.balikId].name:'').filter(Boolean))].sort();
+  const naks = [...new Set(all.map(sp=>sp.nakladkaId&&nakladky[sp.nakladkaId]?nakladky[sp.nakladkaId].name:'').filter(Boolean))].sort();
+  const dats = [...new Set(all.map(sp=>sp.nakladkaId&&nakladky[sp.nakladkaId]?nakladky[sp.nakladkaId].date:'').filter(Boolean))].sort().reverse();
+
+  pedEl.innerHTML = '<option value="">PED (všetky)</option>' + peds.map(v=>`<option value="${v}"${v===pedVal?' selected':''}>${v}</option>`).join('');
+  balikEl.innerHTML = '<option value="">Balík (všetky)</option>' + baliks.map(v=>`<option value="${v}"${v===balikVal?' selected':''}>${v}</option>`).join('');
+  nakEl.innerHTML = '<option value="">Nakladka (všetky)</option>' + naks.map(v=>`<option value="${v}"${v===nakVal?' selected':''}>${v}</option>`).join('');
+  datEl.innerHTML = '<option value="">Dátum (všetky)</option>' + dats.map(v=>`<option value="${v}"${v===datVal?' selected':''}>${v}</option>`).join('');
+}
+
 function renderPrehlad(){
   const el=document.getElementById('prehladTable');
   if(!el) return;
   const ql=prehladSearch.toLowerCase();
+  const filterPed = (document.getElementById('filterPed')||{}).value||'';
+  const filterBalik = (document.getElementById('filterBalik')||{}).value||'';
+  const filterNak = (document.getElementById('filterNakladka')||{}).value||'';
+  const filterDat = (document.getElementById('filterDatum')||{}).value||'';
   const all=getAllSpools();
+  populatePrehladFilters(all);
   const rows=all.filter(sp=>{
     if(prehladFilter==='volny'&&(sp.balikId||sp.nakladkaId||sp.vyvezene)) return false;
     if(prehladFilter==='balik'&&!sp.balikId) return false;
     if(prehladFilter==='nakladka'&&!sp.nakladkaId) return false;
     if(prehladFilter==='vyvezene'&&!sp.vyvezene) return false;
     if(ql&&!(`sp-${sp.num} ${sp.iso} ${sp.sec}`).toLowerCase().includes(ql)) return false;
+    if(filterPed){const p=(typeof PED_DATA!=="undefined"&&PED_DATA[sp.sec]&&PED_DATA[sp.sec][sp.iso])||''; if(p!==filterPed) return false;}
+    if(filterBalik){const b=sp.balikId&&baliky[sp.balikId]?baliky[sp.balikId].name:''; if(b!==filterBalik) return false;}
+    if(filterNak){const n=sp.nakladkaId&&nakladky[sp.nakladkaId]?nakladky[sp.nakladkaId].name:''; if(n!==filterNak) return false;}
+    if(filterDat){const d=sp.nakladkaId&&nakladky[sp.nakladkaId]?nakladky[sp.nakladkaId].date:''; if(d!==filterDat) return false;}
     return true;
   }).sort((a,b)=>a.sec.localeCompare(b.sec)||a.iso.localeCompare(b.iso)||(parseInt(a.num)||0)-(parseInt(b.num)||0));
 
