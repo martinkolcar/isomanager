@@ -2633,7 +2633,7 @@ function buildNakSpList(q, sec){
   if(!el) return;
   el.innerHTML = '';
   const ql = q.toLowerCase();
-  const all = getAllSpools().filter(s => !s.nakladkaId);
+  const all = getAllSpools().filter(s => !s.nakladkaId && s.vyvezene);
   let any = false;
 
   all.forEach(sp => {
@@ -2729,7 +2729,12 @@ function saveNakladka(){
     const parts=v.split('|'); // spool|sec|key|sid
     const [,sec,key,sid]=parts;
     spoolRefs.push({sec,key,sid});
-    db.ref('spools/'+sec+'/'+key+'/'+sid+'/nakladkaId').set(nid);
+    db.ref('spools/'+sec+'/'+key+'/'+sid).update({
+      nakladkaId: nid,
+      vyvezene: true,
+      vyvezeneKto: me.name,
+      vyvezeneKedy: new Date().toLocaleString('sk-SK')
+    });
   });
 
   db.ref('nakladky/'+nid).set({
@@ -3190,7 +3195,12 @@ function saveEditNakladka(){
     db.ref('nakladky/'+nid+'/spools').set(newSpools);
     checked.forEach(v=>{
       const [sec,key,sid] = v.split('|');
-      db.ref('spools/'+sec+'/'+key+'/'+sid+'/nakladkaId').set(nid);
+      db.ref('spools/'+sec+'/'+key+'/'+sid).update({
+        nakladkaId: nid,
+        vyvezene: true,
+        vyvezeneKto: me.name,
+        vyvezeneKedy: new Date().toLocaleString('sk-SK')
+      });
     });
   }
   // save new free material
