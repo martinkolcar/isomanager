@@ -2810,7 +2810,7 @@ function renderPrehlad(){
   const stC={new:'st-new',work:'st-work',done:'st-done'};
   el.innerHTML=`<table>
     <thead><tr>
-      <th>Sekcia</th><th>Izometria</th><th>SP</th><th>Popis</th><th>Stav</th>
+      <th>Sekcia</th><th>Izometria</th><th>PED</th><th>SP</th><th>Popis</th><th>Stav</th>
       <th>Vyvezené</th><th>Balík</th><th>Vytvoril</th><th>Nakladka</th><th>Dátum</th>
     </tr></thead>
     <tbody>${rows.map(sp=>{
@@ -2818,16 +2818,19 @@ function renderPrehlad(){
       const nk=sp.nakladkaId&&nakladky[sp.nakladkaId];
       const nName=nk?`<span class="nakladka-chip">${nk.name}</span>`:'—';
       const nDate=nk?nk.date:'';
+      const ped = (typeof PED_DATA!=="undefined"&&PED_DATA[sp.sec]&&PED_DATA[sp.sec][sp.iso])||'';
       return `<tr>
         <td>${sp.sec}</td>
         <td style="font-size:11px">${sp.iso}</td>
-        <td style="font-size:11px;color:var(--blue-dark);white-space:nowrap">${(typeof PED_DATA!=="undefined"&&PED_DATA[sp.sec]&&PED_DATA[sp.sec][sp.iso])||''}</td>
-        <td><strong>SP-${sp.num}</strong></td><td>${sp.desc||'—'}</td>
+        <td style="font-size:11px;color:var(--blue-dark);white-space:nowrap">${ped}</td>
+        <td><strong>SP-${sp.num}</strong></td>
+        <td>${sp.desc||'—'}</td>
         <td><span class="${stC[sp.status]||'st-new'}">${stL[sp.status]||'Nový'}</span></td>
-        <td style="text-align:center">${sp.vyvezene ? '✅' : '—'}${sp.vyvezeneKto ? '<br><span style="font-size:10px;color:var(--green)">'+sp.vyvezeneKto+'</span>' : ''}</td>
+        <td style="text-align:center">${sp.vyvezene ? '✅' : '—'}</td>
         <td>${bName}</td>
         <td style="font-size:11px;color:var(--text3)">${sp.creator||'—'}</td>
-        <td>${nName}</td><td style="font-size:11px;color:var(--text3)">${nDate}</td>
+        <td>${nName}</td>
+        <td style="font-size:11px;color:var(--text3)">${nDate}</td>
       </tr>`;
     }).join('')}</tbody>
   </table>`;
