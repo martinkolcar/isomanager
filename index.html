@@ -2980,12 +2980,13 @@ function exportNakladkaPdf(nid){
     const bk=baliky[bid]; if(!bk) return;
     (bk.spools||[]).forEach(v=>allSpoolRefs.add(v));
   });
+  function decodeHtml(str){ const t=document.createElement('textarea'); t.innerHTML=str; return t.value; }
   allSpoolRefs.forEach(v=>{
     const [sec,key,sid]=v.split('|');
     const sp=(spools[sec+'/'+key]||{})[sid];
     if(!sp) return;
     const iso=(ISOMETRIES_DATA[sec]||[]).find(i=>isoKey(i)===key)||key;
-    const bName=sp.balikId&&baliky[sp.balikId]?baliky[sp.balikId].name:'—';
+    const bName=sp.balikId&&baliky[sp.balikId]?decodeHtml(baliky[sp.balikId].name):'—';
     rows.push([sec,iso,'SP-'+sp.num,sp.desc||'',{new:'Nový',work:'Vo výrobe',done:'Hotový'}[sp.status]||'',bName]);
   });
   rows.sort((a,b)=>a[0].localeCompare(b[0])||a[1].localeCompare(b[1])||(parseInt(a[2].replace('SP-',''))||0)-(parseInt(b[2].replace('SP-',''))||0));
@@ -3027,7 +3028,8 @@ function exportNakladkaExcel(nid){
     const sp=(spools[sec+'/'+key]||{})[sid];
     if(!sp) return;
     const iso=(ISOMETRIES_DATA[sec]||[]).find(i=>isoKey(i)===key)||key;
-    const bName=sp.balikId&&baliky[sp.balikId]?baliky[sp.balikId].name:'';
+    const decodeHtml2=(str)=>{const t=document.createElement('textarea');t.innerHTML=str;return t.value;};
+    const bName=sp.balikId&&baliky[sp.balikId]?decodeHtml2(baliky[sp.balikId].name):'';
     rows.push({Sekcia:sec,Izometria:iso,Spool:'SP-'+sp.num,Popis:sp.desc||'',Stav:{new:'Nový',work:'Vo výrobe',done:'Hotový'}[sp.status]||'',Balik:bName,DatumOdvozu:nk.date||''});
   });
   rows.sort((a,b)=>a.Sekcia.localeCompare(b.Sekcia)||a.Izometria.localeCompare(b.Izometria));
