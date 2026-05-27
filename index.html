@@ -3000,7 +3000,7 @@ function exportNakladkaPdf(nid){
     const bName=sp.balikId&&baliky[sp.balikId]?decodeHtml(baliky[sp.balikId].name):'—';
     rows.push([sec,iso,'SP-'+sp.num,sk(sp.desc||''),sk({new:'Nový',work:'Vo výrobe',done:'Hotový'}[sp.status]||''),sk(bName)]);
   });
-  rows.sort((a,b)=>a[0].localeCompare(b[0])||a[1].localeCompare(b[1])||(parseInt(a[2].replace('SP-',''))||0)-(parseInt(b[2].replace('SP-',''))||0));
+  rows.sort((a,b)=>a[0].localeCompare(b[0])||a[1].localeCompare(b[1])||(parseInt(a[2].replace(/[^0-9]/g,''))||0)-(parseInt(b[2].replace(/[^0-9]/g,''))||0));
 
   doc.autoTable({
     startY:38,
@@ -3043,7 +3043,15 @@ function exportNakladkaExcel(nid){
     const bName=sp.balikId&&baliky[sp.balikId]?decodeHtml2(baliky[sp.balikId].name):'';
     rows.push({Sekcia:sec,Izometria:iso,Spool:'SP-'+sp.num,Popis:sp.desc||'',Stav:{new:'Nový',work:'Vo výrobe',done:'Hotový'}[sp.status]||'',Balik:bName,DatumOdvozu:nk.date||''});
   });
-  rows.sort((a,b)=>a.Sekcia.localeCompare(b.Sekcia)||a.Izometria.localeCompare(b.Izometria));
+  rows.sort((a,b)=>{
+    const secCmp = a.Sekcia.localeCompare(b.Sekcia);
+    if(secCmp!==0) return secCmp;
+    const isoCmp = a.Izometria.localeCompare(b.Izometria);
+    if(isoCmp!==0) return isoCmp;
+    const aNum = parseInt((a.Spool||'').replace(/[^0-9]/g,''))||0;
+    const bNum = parseInt((b.Spool||'').replace(/[^0-9]/g,''))||0;
+    return aNum - bNum;
+  });
   const ws=XLSX.utils.json_to_sheet(rows);
   ws['!cols']=[{wch:8},{wch:40},{wch:10},{wch:25},{wch:12},{wch:14},{wch:14}];
   const wb=XLSX.utils.book_new();
