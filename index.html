@@ -62,7 +62,7 @@ const FLA_DRIVE_IDS = {
 };
 function getIsoJpgUrl(sec, iso) {
   if (sec === 'FLA' && FLA_DRIVE_IDS[iso]) {
-    return 'https://drive.google.com/file/d/' + FLA_DRIVE_IDS[iso] + '/view';
+    return 'isometries/FLA/' + iso + '.jpg';
   }
   return null;
 }
@@ -117,6 +117,14 @@ html,body{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,sans-seri
 .nav-tab{padding:9px 18px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;color:var(--text2);border-bottom:2px solid transparent;transition:color .12s;letter-spacing:.2px}
 .nav-tab:hover{color:var(--text)}
 .nav-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+
+/* ISO LIGHTBOX */
+.iso-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9999;align-items:center;justify-content:center;flex-direction:column}
+.iso-modal-overlay.open{display:flex}
+.iso-modal-img{max-width:95vw;max-height:88vh;border-radius:6px;box-shadow:0 8px 40px rgba(0,0,0,.6);background:#fff}
+.iso-modal-title{color:#fff;font-size:13px;margin-bottom:8px;opacity:.85;font-family:monospace}
+.iso-modal-close{position:fixed;top:14px;right:18px;font-size:24px;color:#fff;cursor:pointer;opacity:.7;line-height:1;background:none;border:none}
+.iso-modal-close:hover{opacity:1}
 
 /* SECTION TABS */
 .sec-tabs{display:flex;gap:2px;padding:8px 12px;background:var(--surface2);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto}
@@ -2328,7 +2336,7 @@ function renderSb(q,filter){
     const qlH = q ? q.toLowerCase() : '';
     const isoHtml = qlH ? iso.replace(new RegExp('('+qlH.replace(/[-]/g,'\\-')+')','gi'),'<mark style="background:#fff3b0;border-radius:2px">$1</mark>') : iso;
     const jpgUrl = getIsoJpgUrl(curSec, iso);
-    const eyeBtn = jpgUrl ? `<button class="iso-pdf-btn" title="Zobraziť izometriu" onclick="event.stopPropagation();window.open('${jpgUrl}','_blank')">👁</button>` : '';
+    const eyeBtn = jpgUrl ? `<button class="iso-pdf-btn" title="Zobraziť izometriu" onclick="event.stopPropagation();openIsoModal('${iso}','${jpgUrl}')">👁</button>` : '';
     item.innerHTML=`<span class="iso-name">${isoHtml}</span>${eyeBtn}<span class="sp-badge ${cnt>0?'has':''}">${cnt>0?cnt+' SP':'—'}</span>`;
     item.onclick=()=>selectIso(iso);
     list.appendChild(item); shown++;
@@ -3830,5 +3838,27 @@ initAvPick();
     </div>
   </div>
 </div>
+<!-- ISO LIGHTBOX MODAL -->
+<div class="iso-modal-overlay" id="isoModal" onclick="closeIsoModal(event)">
+  <button class="iso-modal-close" onclick="document.getElementById('isoModal').classList.remove('open')">✕</button>
+  <div class="iso-modal-title" id="isoModalTitle"></div>
+  <img class="iso-modal-img" id="isoModalImg" src="" alt="Izometria" />
+</div>
+
+<script>
+function openIsoModal(iso, url) {
+  document.getElementById('isoModalTitle').textContent = iso;
+  document.getElementById('isoModalImg').src = url;
+  document.getElementById('isoModal').classList.add('open');
+}
+function closeIsoModal(e) {
+  if (e.target === document.getElementById('isoModal')) {
+    document.getElementById('isoModal').classList.remove('open');
+  }
+}
+document.addEventListener('keydown', function(e){
+  if(e.key==='Escape') document.getElementById('isoModal').classList.remove('open');
+});
+</script>
 </body>
 </html>
