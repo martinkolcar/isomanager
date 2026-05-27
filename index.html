@@ -72,97 +72,6 @@ window.doLoginKey = function(e){
 };
 window.DBOn = (p, cb) => { dbOnValue(dbRef(window.DB, p), snap => cb(snap)); return () => {}; };
 window.dispatchEvent(new Event('fbReady'));
-
-window.openAdminPanel = function(){
-  const panel = document.getElementById('adminPanel');
-  panel.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;align-items:center;justify-content:center';
-  loadAdminUsers();
-};
-window.closeAdminPanel = function(){
-  document.getElementById('adminPanel').style.display='none';
-  document.getElementById('adminPanel').style.cssText='display:none';
-};
-
-window.adminAddUser = async function(){
-  const name = document.getElementById('newUserName').value.trim();
-  const pass = document.getElementById('newUserPass').value.trim();
-  const msg = document.getElementById('adminMsg');
-  if(!name || !pass){ msg.style.color='#e57373'; msg.textContent='Zadaj meno aj heslo!'; return; }
-  
-  const email = name.toLowerCase().replace(/\s+/g,'') + '@iso.sk';
-  msg.style.color='#4fc3f7'; msg.textContent='Vytváram...';
-  
-  try{
-    const cred = await createUserWithEmailAndPassword(window._auth, email, pass);
-    await updateProfile(cred.user, { displayName: name });
-    // Save to DB for listing
-    await window.DBSet('users/' + cred.user.uid, { name, email, createdAt: Date.now() });
-    msg.style.color='#81c784'; msg.textContent='✓ Užívateľ "' + name + '" vytvorený';
-    document.getElementById('newUserName').value='';
-    document.getElementById('newUserPass').value='';
-  }catch(e){
-    msg.style.color='#e57373';
-    msg.textContent = e.code==='auth/email-already-in-use' ? '⚠ Tento užívateľ už existuje' : '✗ ' + e.message;
-  }
-};
-
-window.loadAdminUsers = function(){
-  const list = document.getElementById('adminUserList');
-  list.innerHTML = '<div style="color:#567">Načítavam...</div>';
-  window.DBOn('users', snap => {
-    const users = snap.val() || {};
-    if(!Object.keys(users).length){
-      list.innerHTML = '<div style="color:#567">Žiadni užívatelia. Pridaj prvého hore.</div>';
-      return;
-    }
-    list.innerHTML = Object.entries(users).map(([uid, u]) => {
-      const isAdmin = u.email === 'martinkolcar@iso.sk';
-      const btn = isAdmin 
-        ? '<span style="color:#4fc3f7;font-size:10px">ADMIN</span>'
-        : '<button onclick="adminDeleteUser(\''+uid+'\')" style="background:#e57373;border:none;border-radius:4px;color:#fff;padding:3px 8px;font-size:11px;cursor:pointer">🗑 Zmazať</button>';
-      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)">'
-        + '<div><span style="color:var(--text);font-weight:600">' + u.name + '</span>'
-        + '<span style="color:#567;margin-left:8px;font-size:10px">' + u.email + '</span></div>'
-        + btn + '</div>';
-    }).join('');;
-  });
-};
-
-window.adminDeleteUser = async function(uid){
-  const users = {};
-  const snap = await new Promise(r => window.DBOn('users/'+uid, r));
-  const u = snap.val();
-  if(!u) return;
-  if(!confirm('Zmazať užívateľa "' + u.name + '"?')) return;
-  await window.DBRemove('users/' + uid);
-  document.getElementById('adminMsg').style.color='#81c784';
-  document.getElementById('adminMsg').textContent = '✓ Užívateľ "' + u.name + '" zmazaný zo zoznamu';
-};
-
-window.doLogin = async function(){
-  const name = document.getElementById('loginName').value.trim();
-  const pass = document.getElementById('loginPass').value.trim();
-  const email = name.toLowerCase().replace(/\s+/g,'') + '@iso.sk';
-  const btn = document.getElementById('loginBtn');
-  const err = document.getElementById('loginErr');
-  err.textContent='';
-  if(!name||!pass){ err.textContent='Zadaj meno aj heslo'; return; }
-  btn.disabled=true; btn.textContent='Prihlasovanie...';
-  try{
-    const { signInWithEmailAndPassword, getAuth } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
-    await signInWithEmailAndPassword(window._auth, email, pass);
-  }catch(e){
-    err.textContent='Nesprávne meno alebo heslo';
-    btn.disabled=false; btn.textContent='Prihlásiť sa';
-  }
-};
-
-window.doLoginKey = function(e){ if(e.key==='Enter') window.doLogin(); };
-
-window.doLogout = async function(){
-  if(confirm('Odhlásiť sa?')) await signOut(window._auth);
-};
-</script>
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -6245,5 +6154,76 @@ initAvPick();
   </div>
 </div>
 
+<script>
+window.openAdminPanel = function(){
+  const panel = document.getElementById('adminPanel');
+  panel.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;align-items:center;justify-content:center';
+  loadAdminUsers();
+};
+window.closeAdminPanel = function(){
+  document.getElementById('adminPanel').style.display='none';
+  document.getElementById('adminPanel').style.cssText='display:none';
+};
+
+window.adminAddUser = async function(){
+  const name = document.getElementById('newUserName').value.trim();
+  const pass = document.getElementById('newUserPass').value.trim();
+  const msg = document.getElementById('adminMsg');
+  if(!name || !pass){ msg.style.color='#e57373'; msg.textContent='Zadaj meno aj heslo!'; return; }
+  
+  const email = name.toLowerCase().replace(/\s+/g,'') + '@iso.sk';
+  msg.style.color='#4fc3f7'; msg.textContent='Vytváram...';
+  
+  try{
+    const cred = await createUserWithEmailAndPassword(window._auth, email, pass);
+    await updateProfile(cred.user, { displayName: name });
+    msg.style.color='#81c784'; msg.textContent='✓ Užívateľ "' + name + '" vytvorený (heslo: ' + pass + ')';
+    document.getElementById('newUserName').value='';
+    document.getElementById('newUserPass').value='';
+    loadAdminUsers();
+  }catch(e){
+    msg.style.color='#e57373';
+    msg.textContent = e.code==='auth/email-already-in-use' ? '⚠ Tento užívateľ už existuje' : '✗ ' + e.message;
+  }
+};
+
+window.loadAdminUsers = async function(){
+  const list = document.getElementById('adminUserList');
+  list.textContent = 'Načítavam...';
+  try{
+    // We can only list users via Admin SDK (server-side)
+    // On client we just show current user info
+    const user = window._currentUser;
+    list.innerHTML = '<div style="color:var(--text2)">Prihlásený: <b style="color:var(--text)">' + (user?.displayName||user?.email) + '</b></div>' +
+      '<div style="margin-top:8px;color:#567">Pre úplný zoznam užívateľov choď do:<br><a href="https://console.firebase.google.com/project/export-app-425db/authentication/users" target="_blank" style="color:#4fc3f7">Firebase konzola → Authentication → Users</a></div>';
+  }catch(e){
+    list.textContent = 'Chyba: ' + e.message;
+  }
+};
+
+window.doLogin = async function(){
+  const name = document.getElementById('loginName').value.trim();
+  const pass = document.getElementById('loginPass').value.trim();
+  const email = name.toLowerCase().replace(/\s+/g,'') + '@iso.sk';
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginErr');
+  err.textContent='';
+  if(!name||!pass){ err.textContent='Zadaj meno aj heslo'; return; }
+  btn.disabled=true; btn.textContent='Prihlasovanie...';
+  try{
+    const { signInWithEmailAndPassword, getAuth } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+    await signInWithEmailAndPassword(window._auth, email, pass);
+  }catch(e){
+    err.textContent='Nesprávne meno alebo heslo';
+    btn.disabled=false; btn.textContent='Prihlásiť sa';
+  }
+};
+
+window.doLoginKey = function(e){ if(e.key==='Enter') window.doLogin(); };
+
+window.doLogout = async function(){
+  if(confirm('Odhlásiť sa?')) await signOut(window._auth);
+};
+</script>
 </body>
 </html>
