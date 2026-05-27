@@ -45,20 +45,21 @@ onAuthStateChanged(_auth, (user) => {
 });
 
 window.doLogin = async function(){
-  const name = document.getElementById('loginName').value.trim().toLowerCase().replace(/\s+/g,'');
+  const raw = document.getElementById('loginName').value.trim();
   const pass = document.getElementById('loginPass').value.trim();
-  const email = name + '@iso.sk';
+  const email = raw.toLowerCase().split(' ').join('') + '@iso.sk';
   const btn = document.getElementById('loginBtn');
   const err = document.getElementById('loginErr');
   err.textContent='';
+  if(!raw||!pass){ err.textContent='Zadaj meno aj heslo'; return; }
   btn.disabled=true;
   btn.textContent='Prihlasovanie...';
   try{
-    await signInWithEmailAndPassword(_auth, email, pass);
+    await signInWithEmailAndPassword(window._auth, email, pass);
   }catch(e){
-    err.textContent = 'Nesprávne meno alebo heslo';
-    btn.disabled=false;
-    btn.textContent='Prihlásiť sa';
+    console.error('Login:', e.code, email);
+    err.textContent='Nesprávne meno alebo heslo';
+    btn.disabled=false; btn.textContent='Prihlásiť sa';
   }
 };
 
@@ -6155,7 +6156,9 @@ initAvPick();
 
 <script>
 window.openAdminPanel = function(){
-  document.getElementById('adminPanel').style.display='flex';
+  const panel = document.getElementById('adminPanel');
+  panel.style.display='flex';
+  panel.classList.add('open');
   loadAdminUsers();
 };
 window.closeAdminPanel = function(){
@@ -6172,7 +6175,6 @@ window.adminAddUser = async function(){
   msg.style.color='#4fc3f7'; msg.textContent='Vytváram...';
   
   try{
-    const { createUserWithEmailAndPassword, updateProfile, getAuth } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
     const cred = await createUserWithEmailAndPassword(window._auth, email, pass);
     await updateProfile(cred.user, { displayName: name });
     msg.style.color='#81c784'; msg.textContent='✓ Užívateľ "' + name + '" vytvorený (heslo: ' + pass + ')';
@@ -6220,8 +6222,7 @@ window.doLogin = async function(){
 window.doLoginKey = function(e){ if(e.key==='Enter') window.doLogin(); };
 
 window.doLogout = async function(){
-  const { signOut, getAuth } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
-  await signOut(window._auth);
+  if(confirm('Odhlásiť sa?')) await signOut(window._auth);
 };
 </script>
 </body>
