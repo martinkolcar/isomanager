@@ -8,6 +8,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref as dbRef, set as dbSet, update as dbUpdate, remove as dbRemove, onValue as dbOnValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword, updateProfile, deleteUser as fbDeleteUser } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 const _app = initializeApp({
   apiKey: "AIzaSyBZQRG7d7RWLX5eoIPPmX9kRY0ECcfUahg",
   authDomain: "export-app-425db.firebaseapp.com",
@@ -18,10 +19,56 @@ const _app = initializeApp({
   appId: "1:726240282678:web:0eb77fa22bc8e9db173097"
 });
 window.DB = getDatabase(_app);
+const _auth = getAuth(_app);
+window._auth = _auth;
+const ADMIN_EMAIL = 'martinkolcar@iso.sk';
 window.DBRef = (p) => dbRef(window.DB, p);
 window.DBSet = (p, v) => dbSet(dbRef(window.DB, p), v);
 window.DBUpdate = (p, v) => dbUpdate(dbRef(window.DB, p), v);
 window.DBRemove = (p) => dbRemove(dbRef(window.DB, p));
+
+// AUTH - wait for login before showing app
+onAuthStateChanged(_auth, (user) => {
+  if(user){
+    window._currentUser = user;
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('userNameDisplay').textContent = user.displayName || user.email.split('@')[0];
+    if(user.email === ADMIN_EMAIL){
+      document.getElementById('adminBtn').style.display='inline-flex';
+    }
+    if(typeof initApp === 'function') initApp();
+  } else {
+    document.getElementById('loginScreen').style.display='flex';
+    document.getElementById('app').style.display='none';
+  }
+});
+
+window.doLogin = async function(){
+  const name = document.getElementById('loginName').value.trim().toLowerCase().replace(/\s+/g,'');
+  const pass = document.getElementById('loginPass').value.trim();
+  const email = name + '@iso.sk';
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginErr');
+  err.textContent='';
+  btn.disabled=true;
+  btn.textContent='Prihlasovanie...';
+  try{
+    await signInWithEmailAndPassword(_auth, email, pass);
+  }catch(e){
+    err.textContent = 'Nesprávne meno alebo heslo';
+    btn.disabled=false;
+    btn.textContent='Prihlásiť sa';
+  }
+};
+
+window.doLogout = async function(){
+  await signOut(_auth);
+};
+
+window.doLoginKey = function(e){
+  if(e.key==='Enter') window.doLogin();
+};
 window.DBOn = (p, cb) => { dbOnValue(dbRef(window.DB, p), snap => cb(snap)); return () => {}; };
 window.dispatchEvent(new Event('fbReady'));
 </script>
@@ -2426,6 +2473,11 @@ tr:hover td{background:var(--surface2)}
     <div class="spacer"></div>
     <button class="btn btn-amber" onclick="openBalikModal()">📦 <span class="btn-text">Nový balík</span></button>
     <button class="btn btn-purple" onclick="openNakladkaModal()">🚛 <span class="btn-text">Nová nakladka</span></button>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:8px;flex-shrink:0">
+      <span id="userNameDisplay" style="font-size:11px;color:var(--text2);font-family:monospace;white-space:nowrap"></span>
+      <button id="adminBtn" class="btn btn-blue" style="display:none;padding:5px 10px;font-size:11px" onclick="openAdminPanel()">⚙️ Admin</button>
+      <button class="btn" style="padding:5px 10px;font-size:11px;background:var(--surface2)" onclick="doLogout()" title="Odhlásiť sa">🚪</button>
+    </div>
   </div>
 
   <!-- NAV TABS -->
@@ -6050,6 +6102,126 @@ initAvPick();
   },{passive:false});
   vp.addEventListener('touchend', function(){ dragging=false; });
 })();
+</script>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#000">
+  <video autoplay muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.4">
+    <source src="login_bg.mp4" type="video/mp4">
+  </video>
+  <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,0,0,0.65),rgba(10,20,40,0.65))"></div>
+  <div style="position:relative;z-index:2;background:rgba(12,18,32,0.92);border:1px solid rgba(79,195,247,0.25);border-radius:16px;padding:40px 36px;width:320px;box-shadow:0 20px 60px rgba(0,0,0,0.7);backdrop-filter:blur(12px)">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:26px;font-weight:800;color:#fff;letter-spacing:-0.5px">Iso<span style="color:#4fc3f7">Manager</span></div>
+      <div style="font-size:10px;color:#567;margin-top:4px;letter-spacing:1.5px;text-transform:uppercase">Pipe Spool Management</div>
+    </div>
+    <label style="display:block;font-size:11px;color:#89a;margin-bottom:5px;font-family:monospace;letter-spacing:0.5px">MENO</label>
+    <input id="loginName" type="text" placeholder="napr. Martin Kolcar" onkeydown="doLoginKey(event)"
+      style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:14px;margin-bottom:14px;box-sizing:border-box;outline:none;font-family:monospace" />
+    <label style="display:block;font-size:11px;color:#89a;margin-bottom:5px;font-family:monospace;letter-spacing:0.5px">HESLO</label>
+    <input id="loginPass" type="password" placeholder="••••" onkeydown="doLoginKey(event)"
+      style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:14px;margin-bottom:18px;box-sizing:border-box;outline:none;font-family:monospace" />
+    <button id="loginBtn" onclick="doLogin()"
+      style="width:100%;padding:12px;background:linear-gradient(135deg,#1a6fa8,#4fc3f7);border:none;border-radius:8px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.5px">
+      Prihlásiť sa
+    </button>
+    <div id="loginErr" style="color:#e57373;font-size:12px;text-align:center;margin-top:10px;min-height:18px;font-family:monospace"></div>
+    <div style="text-align:center;margin-top:20px;font-size:10px;color:#345;font-family:monospace">© IsoManager 2025 · Andritz Södra</div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:500px;width:95%">
+    <div class="modal-header">
+      <span>⚙️ Admin — Správa užívateľov</span>
+      <button class="modal-close" onclick="closeAdminPanel()">✕</button>
+    </div>
+    <div style="padding:20px">
+      <h4 style="margin:0 0 12px;color:var(--text)">Pridať nového užívateľa</h4>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input id="newUserName" placeholder="Meno Priezvisko" style="flex:2;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px" />
+        <input id="newUserPass" placeholder="Heslo" style="flex:1;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px" />
+      </div>
+      <button class="btn btn-blue" style="width:100%" onclick="adminAddUser()">➕ Pridať užívateľa</button>
+      <div id="adminMsg" style="font-size:12px;margin-top:8px;min-height:18px;font-family:monospace;color:var(--green)"></div>
+      <hr style="margin:16px 0;border-color:var(--border)">
+      <h4 style="margin:0 0 12px;color:var(--text)">Existujúci užívatelia</h4>
+      <div id="adminUserList" style="font-size:12px;font-family:monospace;color:var(--text2)">Načítavam...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.openAdminPanel = function(){
+  document.getElementById('adminPanel').style.display='flex';
+  loadAdminUsers();
+};
+window.closeAdminPanel = function(){
+  document.getElementById('adminPanel').style.display='none';
+};
+
+window.adminAddUser = async function(){
+  const name = document.getElementById('newUserName').value.trim();
+  const pass = document.getElementById('newUserPass').value.trim();
+  const msg = document.getElementById('adminMsg');
+  if(!name || !pass){ msg.style.color='#e57373'; msg.textContent='Zadaj meno aj heslo!'; return; }
+  
+  const email = name.toLowerCase().replace(/\s+/g,'') + '@iso.sk';
+  msg.style.color='#4fc3f7'; msg.textContent='Vytváram...';
+  
+  try{
+    const { createUserWithEmailAndPassword, updateProfile, getAuth } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+    const cred = await createUserWithEmailAndPassword(window._auth, email, pass);
+    await updateProfile(cred.user, { displayName: name });
+    msg.style.color='#81c784'; msg.textContent='✓ Užívateľ "' + name + '" vytvorený (heslo: ' + pass + ')';
+    document.getElementById('newUserName').value='';
+    document.getElementById('newUserPass').value='';
+    loadAdminUsers();
+  }catch(e){
+    msg.style.color='#e57373';
+    msg.textContent = e.code==='auth/email-already-in-use' ? '⚠ Tento užívateľ už existuje' : '✗ ' + e.message;
+  }
+};
+
+window.loadAdminUsers = async function(){
+  const list = document.getElementById('adminUserList');
+  list.textContent = 'Načítavam...';
+  try{
+    // We can only list users via Admin SDK (server-side)
+    // On client we just show current user info
+    const user = window._currentUser;
+    list.innerHTML = '<div style="color:var(--text2)">Prihlásený: <b style="color:var(--text)">' + (user?.displayName||user?.email) + '</b></div>' +
+      '<div style="margin-top:8px;color:#567">Pre úplný zoznam užívateľov choď do:<br><a href="https://console.firebase.google.com/project/export-app-425db/authentication/users" target="_blank" style="color:#4fc3f7">Firebase konzola → Authentication → Users</a></div>';
+  }catch(e){
+    list.textContent = 'Chyba: ' + e.message;
+  }
+};
+
+window.doLogin = async function(){
+  const name = document.getElementById('loginName').value.trim();
+  const pass = document.getElementById('loginPass').value.trim();
+  const email = name.toLowerCase().replace(/\s+/g,'') + '@iso.sk';
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginErr');
+  err.textContent='';
+  if(!name||!pass){ err.textContent='Zadaj meno aj heslo'; return; }
+  btn.disabled=true; btn.textContent='Prihlasovanie...';
+  try{
+    const { signInWithEmailAndPassword, getAuth } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+    await signInWithEmailAndPassword(window._auth, email, pass);
+  }catch(e){
+    err.textContent='Nesprávne meno alebo heslo';
+    btn.disabled=false; btn.textContent='Prihlásiť sa';
+  }
+};
+
+window.doLoginKey = function(e){ if(e.key==='Enter') window.doLogin(); };
+
+window.doLogout = async function(){
+  const { signOut, getAuth } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+  await signOut(window._auth);
+};
 </script>
 </body>
 </html>
