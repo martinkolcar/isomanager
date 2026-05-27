@@ -2813,13 +2813,16 @@ function renderNakladkaGrid(){
   }
   el.innerHTML='';
   entries.sort((a,b)=>b[1].created-a[1].created).forEach(([nid,nk])=>{
-    const cnt=(nk.spools||[]).length;
+    // Count direct spools + spools from baliky
+    let cnt=(nk.spools||[]).length;
+    (nk.balikIds||[]).forEach(bid=>{ const bk=baliky[bid]; if(bk) cnt+=(bk.spools||[]).length; });
+    const balikCnt=(nk.balikIds||[]).length;
     const card=document.createElement('div');
     card.className='nakladka-card';
     card.innerHTML=`
       <div class="nc-name">${nk.name}</div>
       <div class="nc-date">📅 ${nk.date||'—'} ${nk.note?'· '+nk.note:''}</div>
-      <div class="nc-sub">${cnt} spool${cnt!==1?'ov':''} ${nk.volnyMaterial&&nk.volnyMaterial.length ? '· '+nk.volnyMaterial.length+' mat.' : ''}</div>
+      <div class="nc-sub">${cnt} spool${cnt!==1?'ov':''} ${balikCnt?'· '+balikCnt+' bal.':''} ${nk.volnyMaterial&&nk.volnyMaterial.length ? '· '+nk.volnyMaterial.length+' mat.' : ''}</div>
       <div class="nc-acts">
         <button class="sbtn" onclick="showNakladkaDetail('${nid}')">👁</button>
         <button class="sbtn" onclick="editNakladka('${nid}')">✏️</button>
