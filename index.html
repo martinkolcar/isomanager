@@ -29,6 +29,44 @@ window.dispatchEvent(new Event('fbReady'));
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="isometries_data.js?v=2"></script>
+<script>
+// FLA izometrie - Google Drive JPG IDs
+const FLA_DRIVE_IDS = {
+  "ÅL3-710-20049-1-50-10C1B": "1pLEZbHSfcvPK2vsvbPZpdNFYp9Zvbltg",
+  "ÅL3-710-20049-4-100-10C1B": "1fMQdETE4qa3fQtWNVanD9uSL9SJX2_Eu",
+  "ÅL3-710-20049-7-80-10C1B": "1J9LyuEbCGOUFp4EvKauqgAfVpXlVxYv0",
+  "GAL-710-20045-2-150-10H2A": "1xkPDXsFMKepxNMVYe0PHj_KOGo4C-1XI",
+  "GAL-710-20047-2-50-10H2A": "1AzrOe5srCp4UAjgEB2Vo9f-2QQnHu2dR",
+  "GAL-710-20047-4-50-10H2A": "1A1VpAZffy0tIpexd2l_eLhDdPhNNRIXG",
+  "GAL-710-20048-1-150-10H2A": "14I5NuysxXV3bKSHCYTM2qzKfMKkW--j_",
+  "GAL-710-20048-3-150-10H2A": "1L6r4pPYHOSq-CVoc2X1Rp8WHqcSMZb3u",
+  "GAT-710-20042-1-300-10H2A": "1Gn454VsBTv4fnOdJlDNcQKGN0dAIirav",
+  "GAT-710-20042-4-100-10H2A": "1DR51hOOg2DpNe_XQAex4YWaD57kOWBCL",
+  "GAT-710-20043-1-300-10H2A": "1t2BPICJq894lsG4N_P8URdng77GWoT8z",
+  "GAT-710-20044-2-300-10H2A": "1fcvBXdaQ_VgCczf0XoMJPjTSVybKWEYL",
+  "GAT-710-20046-2-50-10H2A": "17RNWggDpu_79EWvxLM5zF2YYXQjhpW5K",
+  "GLP-710-20055-1-15-10H1A": "1kHwE7G-CcHXu_NTSg20bg3dX-expxSnt",
+  "GLP-710-20055-5-15-10H1A": "1WZlHcPT1X7ow1jK_HdGtgZf9R2MNWnwP",
+  "GLP-710-20057-6-15-10H1A": "1g6w5HZNUqtefSYo6D5dNN0f-hU6YBdTx",
+  "GLP-710-20065-1-15-16H1A": "16f2SRftSESWW8fJRgHn3W0JZF23_h4nG",
+  "GLP-710-20065-4-15-10H1A": "198kHkbSVPYXzg2A7xvOQ5WkPyZc--DPt",
+  "K(GAT)-710-20050-1-80-10H2A": "1aigiQG8Bfr-AIjDEQEjKh2IEHSdHmXSA",
+  "KY-710-20058-1-25-10H2A": "1BU7IOokcX8M5QXN6FUE8hQXdIuY8XsFd",
+  "KY-710-20059-1-25-10H2A": "1GfwvEOxAyHSRIq_qnythc7TdW9I7MH_A",
+  "KY-710-20060-1-25-10H2A": "1whH2-cJrnSZ7VPGRVR3_c3L5NA6IP6iA",
+  "KY-710-20061-1-25-10H2A": "1S7UQIw22oxEokWvEMn-1s9y8lrrz4hlD",
+  "KY-710-20063-1-25-10H2A": "1n44Ro8l0cMuDPs3s3By8-kwRRLmo7Hpx",
+  "KY-710-20064-1-50-10H2A": "1mkvj8DtxMP714foJeEJJPgAtzpEBRpxC",
+  "OEL-710-20056-1-15-16H2A": "1qUtYP1juKsR3XqXaAunF_2y1gjGopMrs",
+  "OEL-710-20056-2-15-16H2A": "1D1bO6NRdyllkAcAKh8odWnZ7zCZXUeVW"
+};
+function getIsoJpgUrl(sec, iso) {
+  if (sec === 'FLA' && FLA_DRIVE_IDS[iso]) {
+    return 'https://drive.google.com/file/d/' + FLA_DRIVE_IDS[iso] + '/view';
+  }
+  return null;
+}
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -104,6 +142,8 @@ html,body{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,sans-seri
 .iso-name{font-size:12px;word-break:break-all;line-height:1.3}
 .sp-badge{font-size:10px;padding:2px 5px;border-radius:8px;background:var(--surface2);color:var(--text2);white-space:nowrap;flex-shrink:0}
 .sp-badge.has{background:var(--blue-light);color:var(--blue-dark)}
+.iso-pdf-btn{font-size:12px;padding:1px 4px;border-radius:4px;background:none;border:none;cursor:pointer;opacity:0.55;flex-shrink:0;line-height:1;transition:opacity .15s}
+.iso-pdf-btn:hover{opacity:1}
 .sb-foot{padding:6px 12px;font-size:11px;color:var(--text3);border-top:1px solid var(--border)}
 
 /* CONTENT */
@@ -2287,7 +2327,9 @@ function renderSb(q,filter){
     item.className='iso-item'+(iso===curIso?' active':'');
     const qlH = q ? q.toLowerCase() : '';
     const isoHtml = qlH ? iso.replace(new RegExp('('+qlH.replace(/[-]/g,'\\-')+')','gi'),'<mark style="background:#fff3b0;border-radius:2px">$1</mark>') : iso;
-    item.innerHTML=`<span class="iso-name">${isoHtml}</span><span class="sp-badge ${cnt>0?'has':''}">${cnt>0?cnt+' SP':'—'}</span>`;
+    const jpgUrl = getIsoJpgUrl(curSec, iso);
+    const eyeBtn = jpgUrl ? `<button class="iso-pdf-btn" title="Zobraziť izometriu" onclick="event.stopPropagation();window.open('${jpgUrl}','_blank')">👁</button>` : '';
+    item.innerHTML=`<span class="iso-name">${isoHtml}</span>${eyeBtn}<span class="sp-badge ${cnt>0?'has':''}">${cnt>0?cnt+' SP':'—'}</span>`;
     item.onclick=()=>selectIso(iso);
     list.appendChild(item); shown++;
   });
