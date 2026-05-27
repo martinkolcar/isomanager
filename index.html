@@ -2966,12 +2966,23 @@ function exportNakladkaPdf(nid){
   const nk=nakladky[nid]; if(!nk) return;
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  // Transliterate Slovak diacritics for jsPDF (Helvetica has no unicode support)
+  function sk(s){ if(!s) return s;
+    return String(s)
+      .replace(/[áÁ]/g,'a').replace(/[äÄ]/g,'a').replace(/[čČ]/g,'c')
+      .replace(/[ďĎ]/g,'d').replace(/[éÉ]/g,'e').replace(/[íÍ]/g,'i')
+      .replace(/[ľĽ]/g,'l').replace(/[ĺĹ]/g,'l').replace(/[ňŇ]/g,'n')
+      .replace(/[óÓ]/g,'o').replace(/[ôÔ]/g,'o').replace(/[řŘ]/g,'r')
+      .replace(/[šŠ]/g,'s').replace(/[ťŤ]/g,'t').replace(/[úÚ]/g,'u')
+      .replace(/[ůŮ]/g,'u').replace(/[ýÝ]/g,'y').replace(/[žŽ]/g,'z')
+      .replace(/[–—]/g,'-');
+  }
   doc.setFont('helvetica');
-  doc.setFontSize(16); doc.text('Dodací list – '+nk.name,14,16);
+  doc.setFontSize(16); doc.text(sk('Dodací list – '+nk.name),14,16);
   doc.setFontSize(9);
-  doc.text('Dátum odvozu: '+(nk.date||'—'),14,23);
-  doc.text('Dopravca / poznámka: '+(nk.note||'—'),14,28);
-  doc.text('Vygenerované: '+new Date().toLocaleDateString('sk-SK'),14,33);
+  doc.text(sk('Dátum odvozu: '+(nk.date||'—')),14,23);
+  doc.text(sk('Dopravca / poznámka: '+(nk.note||'—')),14,28);
+  doc.text(sk('Vygenerované: '+new Date().toLocaleDateString('sk-SK')),14,33);
 
   const rows=[];
   // collect all spool refs: direct spools + spools from balikIds
@@ -2987,13 +2998,13 @@ function exportNakladkaPdf(nid){
     if(!sp) return;
     const iso=(ISOMETRIES_DATA[sec]||[]).find(i=>isoKey(i)===key)||key;
     const bName=sp.balikId&&baliky[sp.balikId]?decodeHtml(baliky[sp.balikId].name):'—';
-    rows.push([sec,iso,'SP-'+sp.num,sp.desc||'',{new:'Nový',work:'Vo výrobe',done:'Hotový'}[sp.status]||'',bName]);
+    rows.push([sec,iso,'SP-'+sp.num,sk(sp.desc||''),sk({new:'Nový',work:'Vo výrobe',done:'Hotový'}[sp.status]||''),sk(bName)]);
   });
   rows.sort((a,b)=>a[0].localeCompare(b[0])||a[1].localeCompare(b[1])||(parseInt(a[2].replace('SP-',''))||0)-(parseInt(b[2].replace('SP-',''))||0));
 
   doc.autoTable({
     startY:38,
-    head:[['Sekcia','Izometria','Spool','Popis','Stav','Balík']],
+    head:[['Sekcia','Izometria','Spool','Popis','Stav','Balik']],
     body:rows,
     styles:{fontSize:7,cellPadding:2},
     headStyles:{fillColor:[26,95,168],textColor:255,fontStyle:'bold'},
@@ -3003,11 +3014,11 @@ function exportNakladkaPdf(nid){
   // add free material table if exists
   if((nk.volnyMaterial||[]).length){
     const matY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 8 : 38;
-    doc.setFontSize(10); doc.text('Voľný materiál:', 14, matY);
+    doc.setFontSize(10); doc.text(sk('Voľný materiál:'), 14, matY);
     doc.autoTable({
       startY: matY+4,
-      head:[['Typ','Rozmer','Materiál','ks','m']],
-      body:(nk.volnyMaterial||[]).map(m=>[m.typ,m.rozmer||'',m.material||'',m.ks||'',m.metre||'']),
+      head:[['Typ','Rozmer','Material','ks','m']],
+      body:(nk.volnyMaterial||[]).map(m=>[sk(m.typ),sk(m.rozmer||''),sk(m.material||''),m.ks||'',m.metre||'']),
       styles:{fontSize:7,cellPadding:2},
       headStyles:{fillColor:[122,74,8],textColor:255,fontStyle:'bold'},
     });
