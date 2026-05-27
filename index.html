@@ -119,11 +119,11 @@ html,body{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,sans-seri
 .nav-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
 
 /* ISO LIGHTBOX */
-.iso-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9999;align-items:center;justify-content:center;flex-direction:column}
-.iso-modal-overlay.open{display:flex}
-.iso-modal-img{max-width:95vw;max-height:88vh;border-radius:6px;box-shadow:0 8px 40px rgba(0,0,0,.6);background:#fff}
-.iso-modal-title{color:#fff;font-size:13px;margin-bottom:8px;opacity:.85;font-family:monospace}
-.iso-modal-close{position:fixed;top:14px;right:18px;font-size:24px;color:#fff;cursor:pointer;opacity:.7;line-height:1;background:none;border:none}
+.iso-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;padding:20px}
+.iso-modal-overlay.open{display:flex !important}
+.iso-modal-img{display:block;max-width:92vw;max-height:85vh;width:auto;height:auto;border-radius:6px;box-shadow:0 8px 40px rgba(0,0,0,.6);background:#fff;object-fit:contain}
+.iso-modal-title{color:#fff;font-size:13px;margin-bottom:10px;opacity:.85;font-family:monospace;text-align:center}
+.iso-modal-close{position:fixed;top:14px;right:18px;font-size:28px;color:#fff;cursor:pointer;opacity:.8;line-height:1;background:none;border:none;z-index:10000}
 .iso-modal-close:hover{opacity:1}
 
 /* SECTION TABS */
