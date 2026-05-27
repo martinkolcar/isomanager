@@ -119,11 +119,13 @@ html,body{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,sans-seri
 .nav-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
 
 /* ISO LIGHTBOX */
-.iso-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;padding:20px}
+.iso-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;align-items:center;justify-content:center;flex-direction:column;padding:40px 10px 10px}
 .iso-modal-overlay.open{display:flex !important}
-.iso-modal-img{display:block;max-width:92vw;max-height:85vh;width:auto;height:auto;border-radius:6px;box-shadow:0 8px 40px rgba(0,0,0,.6);background:#fff;object-fit:contain}
-.iso-modal-title{color:#fff;font-size:13px;margin-bottom:10px;opacity:.85;font-family:monospace;text-align:center}
-.iso-modal-close{position:fixed;top:14px;right:18px;font-size:28px;color:#fff;cursor:pointer;opacity:.8;line-height:1;background:none;border:none;z-index:10000}
+.iso-modal-viewport{width:94vw;height:calc(94vh - 50px);overflow:hidden;cursor:grab;position:relative;display:flex;align-items:center;justify-content:center}
+.iso-modal-img{display:block;max-width:94vw;max-height:calc(94vh - 50px);width:auto;height:auto;object-fit:contain;transform-origin:center center;user-select:none;pointer-events:none}
+.iso-modal-title{color:#fff;font-size:12px;margin-bottom:6px;opacity:.75;font-family:monospace;text-align:center;width:100%}
+.iso-modal-hint{color:#fff;font-size:11px;opacity:1;transition:opacity 1s;margin-bottom:6px;text-align:center}
+.iso-modal-close{position:fixed;top:8px;right:12px;font-size:26px;color:#fff;cursor:pointer;opacity:.8;line-height:1;background:none;border:none;z-index:10000;padding:4px 8px}
 .iso-modal-close:hover{opacity:1}
 
 /* SECTION TABS */
@@ -3839,26 +3841,110 @@ initAvPick();
   </div>
 </div>
 <!-- ISO LIGHTBOX MODAL -->
-<div class="iso-modal-overlay" id="isoModal" onclick="closeIsoModal(event)">
-  <button class="iso-modal-close" onclick="document.getElementById('isoModal').classList.remove('open')">✕</button>
+<div class="iso-modal-overlay" id="isoModal">
+  <button class="iso-modal-close" id="isoModalClose">✕</button>
   <div class="iso-modal-title" id="isoModalTitle"></div>
-  <img class="iso-modal-img" id="isoModalImg" src="" alt="Izometria" />
+  <div class="iso-modal-hint" id="isoModalHint">🖱 koliesko = zoom &nbsp;|&nbsp; ťahaj = posun &nbsp;|&nbsp; dbl.klik = reset</div>
+  <div class="iso-modal-viewport" id="isoModalViewport">
+    <img class="iso-modal-img" id="isoModalImg" src="" alt="Izometria" draggable="false" />
+  </div>
 </div>
 
 <script>
-function openIsoModal(iso, url) {
-  document.getElementById('isoModalTitle').textContent = iso;
-  document.getElementById('isoModalImg').src = url;
-  document.getElementById('isoModal').classList.add('open');
-}
-function closeIsoModal(e) {
-  if (e.target === document.getElementById('isoModal')) {
-    document.getElementById('isoModal').classList.remove('open');
+(function(){
+  let scale=1, tx=0, ty=0, dragging=false, startX=0, startY=0, startTX=0, startTY=0;
+
+  function applyTransform(){
+    const img = document.getElementById('isoModalImg');
+    img.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`;
   }
-}
-document.addEventListener('keydown', function(e){
-  if(e.key==='Escape') document.getElementById('isoModal').classList.remove('open');
-});
+
+  function resetTransform(){
+    scale=1; tx=0; ty=0; applyTransform();
+  }
+
+  function openIsoModal(iso, url){
+    document.getElementById('isoModalTitle').textContent = iso;
+    const img = document.getElementById('isoModalImg');
+    img.src = url;
+    resetTransform();
+    document.getElementById('isoModal').classList.add('open');
+    // hide hint after 3s
+    const hint = document.getElementById('isoModalHint');
+    hint.style.opacity='1';
+    clearTimeout(hint._t);
+    hint._t = setTimeout(()=>{ hint.style.opacity='0'; }, 3000);
+  }
+  window.openIsoModal = openIsoModal;
+
+  function closeModal(){
+    document.getElementById('isoModal').classList.remove('open');
+    resetTransform();
+  }
+
+  document.getElementById('isoModalClose').addEventListener('click', closeModal);
+
+  // close on backdrop click (not on image)
+  document.getElementById('isoModal').addEventListener('click', function(e){
+    if(e.target === this || e.target.classList.contains('iso-modal-viewport')) closeModal();
+  });
+
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Escape') closeModal();
+  });
+
+  // wheel zoom
+  document.getElementById('isoModalViewport').addEventListener('wheel', function(e){
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 1.15 : 0.87;
+    scale = Math.min(10, Math.max(0.3, scale * delta));
+    applyTransform();
+  }, {passive:false});
+
+  // drag to pan
+  const vp = document.getElementById('isoModalViewport');
+  vp.addEventListener('mousedown', function(e){
+    if(e.button!==0) return;
+    dragging=true; startX=e.clientX; startY=e.clientY; startTX=tx; startTY=ty;
+    vp.style.cursor='grabbing';
+  });
+  window.addEventListener('mousemove', function(e){
+    if(!dragging) return;
+    tx = startTX + (e.clientX - startX);
+    ty = startTY + (e.clientY - startY);
+    applyTransform();
+  });
+  window.addEventListener('mouseup', function(){
+    dragging=false;
+    vp.style.cursor='grab';
+  });
+
+  // double click reset
+  vp.addEventListener('dblclick', resetTransform);
+
+  // touch pinch zoom + pan
+  let touches=[], lastDist=0;
+  vp.addEventListener('touchstart', function(e){
+    touches = Array.from(e.touches);
+    if(touches.length===1){ dragging=true; startX=touches[0].clientX; startY=touches[0].clientY; startTX=tx; startTY=ty; }
+    if(touches.length===2){ lastDist = Math.hypot(touches[0].clientX-touches[1].clientX, touches[0].clientY-touches[1].clientY); }
+  },{passive:true});
+  vp.addEventListener('touchmove', function(e){
+    e.preventDefault();
+    const t = Array.from(e.touches);
+    if(t.length===1 && dragging){
+      tx = startTX + (t[0].clientX - startX);
+      ty = startTY + (t[0].clientY - startY);
+      applyTransform();
+    }
+    if(t.length===2){
+      const dist = Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY);
+      scale = Math.min(10, Math.max(0.3, scale * (dist/lastDist)));
+      lastDist=dist; applyTransform();
+    }
+  },{passive:false});
+  vp.addEventListener('touchend', function(){ dragging=false; });
+})();
 </script>
 </body>
 </html>
