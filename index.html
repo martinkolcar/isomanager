@@ -6177,28 +6177,48 @@ window.adminAddUser = async function(){
   try{
     const cred = await createUserWithEmailAndPassword(window._auth, email, pass);
     await updateProfile(cred.user, { displayName: name });
-    msg.style.color='#81c784'; msg.textContent='✓ Užívateľ "' + name + '" vytvorený (heslo: ' + pass + ')';
+    // Save to DB for listing
+    await window.DBSet('users/' + cred.user.uid, { name, email, createdAt: Date.now() });
+    msg.style.color='#81c784'; msg.textContent='✓ Užívateľ "' + name + '" vytvorený';
     document.getElementById('newUserName').value='';
     document.getElementById('newUserPass').value='';
-    loadAdminUsers();
   }catch(e){
     msg.style.color='#e57373';
     msg.textContent = e.code==='auth/email-already-in-use' ? '⚠ Tento užívateľ už existuje' : '✗ ' + e.message;
   }
 };
 
-window.loadAdminUsers = async function(){
+window.loadAdminUsers = function(){
   const list = document.getElementById('adminUserList');
-  list.textContent = 'Načítavam...';
-  try{
-    // We can only list users via Admin SDK (server-side)
-    // On client we just show current user info
-    const user = window._currentUser;
-    list.innerHTML = '<div style="color:var(--text2)">Prihlásený: <b style="color:var(--text)">' + (user?.displayName||user?.email) + '</b></div>' +
-      '<div style="margin-top:8px;color:#567">Pre úplný zoznam užívateľov choď do:<br><a href="https://console.firebase.google.com/project/export-app-425db/authentication/users" target="_blank" style="color:#4fc3f7">Firebase konzola → Authentication → Users</a></div>';
-  }catch(e){
-    list.textContent = 'Chyba: ' + e.message;
-  }
+  list.innerHTML = '<div style="color:#567">Načítavam...</div>';
+  window.DBOn('users', snap => {
+    const users = snap.val() || {};
+    if(!Object.keys(users).length){
+      list.innerHTML = '<div style="color:#567">Žiadni užívatelia. Pridaj prvého hore.</div>';
+      return;
+    }
+    list.innerHTML = Object.entries(users).map(([uid, u]) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)">
+        <div>
+          <span style="color:var(--text);font-weight:600">${u.name}</span>
+          <span style="color:#567;margin-left:8px;font-size:10px">${u.email}</span>
+        </div>
+        ${u.email === 'martinkolcar@iso.sk' ? '<span style="color:#4fc3f7;font-size:10px">ADMIN</span>' :
+          '<button onclick="adminDeleteUser(''+uid+'')" style="background:#e57373;border:none;border-radius:4px;color:#fff;padding:3px 8px;font-size:11px;cursor:pointer">🗑 Zmazať</button>'}
+      </div>
+    `).join('');
+  });
+};
+
+window.adminDeleteUser = async function(uid){
+  const users = {};
+  const snap = await new Promise(r => window.DBOn('users/'+uid, r));
+  const u = snap.val();
+  if(!u) return;
+  if(!confirm('Zmazať užívateľa "' + u.name + '"?')) return;
+  await window.DBRemove('users/' + uid);
+  document.getElementById('adminMsg').style.color='#81c784';
+  document.getElementById('adminMsg').textContent = '✓ Užívateľ "' + u.name + '" zmazaný zo zoznamu';
 };
 
 window.doLogin = async function(){
