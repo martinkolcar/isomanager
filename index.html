@@ -6157,12 +6157,12 @@ initAvPick();
 <script>
 window.openAdminPanel = function(){
   const panel = document.getElementById('adminPanel');
-  panel.style.display='flex';
-  panel.classList.add('open');
+  panel.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;align-items:center;justify-content:center';
   loadAdminUsers();
 };
 window.closeAdminPanel = function(){
   document.getElementById('adminPanel').style.display='none';
+  document.getElementById('adminPanel').style.cssText='display:none';
 };
 
 window.adminAddUser = async function(){
