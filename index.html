@@ -5503,6 +5503,8 @@ function editNakladka(nid){
   buildEnkBalikList(nid);
   // show available spools to add
   _enkSelectedSpools = new Set();
+  const enkBtn = document.getElementById('enkSaveBtn');
+  if(enkBtn) enkBtn.textContent='Uložiť zmeny';
   document.getElementById('enkSpSearch').value='';
   document.getElementById('enkSecFilter').value='all';
   buildEnkSpList('','all');
@@ -5569,6 +5571,14 @@ function buildEnkSpList(q, sec){
     item.innerHTML = '<input type="checkbox" value="'+ref+'" />'
       +'<span class="sp-check-label">SP-'+sp.num+'</span>'
       +'<span class="sp-check-sub">'+sp.sec+' / '+sp.iso+'</span>';
+    const cb = item.querySelector('input[type="checkbox"]');
+    cb.addEventListener('change', function(){
+      if(this.checked) _enkSelectedSpools.add(this.value);
+      else _enkSelectedSpools.delete(this.value);
+      // update button label
+      const btn = document.getElementById('enkSaveBtn');
+      if(btn) btn.textContent = _enkSelectedSpools.size > 0 ? 'Uložiť zmeny ('+_enkSelectedSpools.size+' spoolov)' : 'Uložiť zmeny';
+    });
     el.appendChild(item); any=true;
   });
   if(!any) el.innerHTML='<div style="padding:8px;font-size:11px;color:var(--text3)">Žiadne dostupné spooly</div>';
