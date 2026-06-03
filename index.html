@@ -4815,12 +4815,17 @@ function delSpool(sid){
 // ===== ALL SPOOLS FLAT =====
 function getAllSpools(){
   const res=[];
-  SECTIONS.forEach(sec=>{
-    (ISOMETRIES_DATA[sec]||[]).forEach(iso=>{
-      const k=sec+'/'+isoKey(iso);
-      Object.entries(spools[k]||{}).forEach(([sid,sp])=>{
-        res.push({sec,iso,sid,key:isoKey(iso),...sp});
-      });
+  // iterate all actual Firebase keys in spools cache
+  Object.entries(spools).forEach(([secKey, sps])=>{
+    const slash = secKey.indexOf('/');
+    if(slash<0) return;
+    const sec = secKey.substring(0, slash);
+    const key = secKey.substring(slash+1);
+    // find matching iso name from ISOMETRIES_DATA
+    const iso = (ISOMETRIES_DATA[sec]||[]).find(i=>isoKey(i)===key) || key;
+    Object.entries(sps||{}).forEach(([sid,sp])=>{
+      if(!sp||!sp.num) return;
+      res.push({sec,iso,sid,key,...sp});
     });
   });
   return res;
@@ -5236,11 +5241,8 @@ function renderPrehlad(){
     </tr></thead>
     <tbody>${rows.map(sp=>{
       const bName=sp.balikId&&baliky[sp.balikId]?`<span class="pkg-chip">${baliky[sp.balikId].name}</span>`:'—';
-      // find nakladka: directly on spool OR via balik OR scan all nakladky for this balik
-      let _nid = sp.nakladkaId || (sp.balikId&&baliky[sp.balikId]?baliky[sp.balikId].nakladkaId:'');
-      if(!_nid && sp.balikId){
-        Object.entries(nakladky).forEach(([nid2,nk2])=>{ if(!_nid&&(nk2.balikIds||[]).includes(sp.balikId)) _nid=nid2; });
-      }
+      // find nakladka: directly on spool OR via balik
+      const _nid = sp.nakladkaId || (sp.balikId&&baliky[sp.balikId]?baliky[sp.balikId].nakladkaId:'');
       const nk = _nid && nakladky[_nid];
       const nName=nk?`<span class="nakladka-chip">${nk.name}</span>`:'—';
       const nDate=nk?nk.date:'';
