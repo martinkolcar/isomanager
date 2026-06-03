@@ -4563,21 +4563,6 @@ function startApp(){
 function initApp(){
   if(!window.DB){ window.addEventListener('fbReady', initApp, {once:true}); return; }
   listenBaliky(); listenNakladky(); listenOnline(); startPresence();
-  // Auto-fix: doplni nakladkaId do balikov ktore ho nemaju
-  setTimeout(function fixMissingBalikNakladkaId(){
-    Object.entries(nakladky).forEach(([nid, nk])=>{
-      (nk.balikIds||[]).forEach(bid=>{
-        const bk = baliky[bid];
-        if(bk && !bk.nakladkaId){
-          db.ref('baliky/'+bid+'/nakladkaId').set(nid);
-          (bk.spools||[]).forEach(v=>{
-            const [sec,key,sid]=v.split('|');
-            if(sec&&key&&sid) db.ref('spools/'+sec+'/'+key+'/'+sid+'/nakladkaId').set(nid);
-          });
-        }
-      });
-    });
-  }, 3000);
   // listen all spools
   SECTIONS.forEach(sec=>{
     db.ref('spools/'+sec).on('value',snap=>{
@@ -4949,9 +4934,32 @@ function deleteBalik(bid){
 }
 
 // ===== NAKLADKY =====
+window.fixBalikNakladkaId = function(){
+  let fixed=0;
+  Object.entries(nakladky).forEach(([nid, nk])=>{
+    (nk.balikIds||[]).forEach(bid=>{
+      const bk = baliky[bid];
+      if(bk && !bk.nakladkaId){
+        db.ref('baliky/'+bid+'/nakladkaId').set(nid);
+        (bk.spools||[]).forEach(v=>{
+          const parts=v.split('|');
+          if(parts.length===3){
+            const [sec,key,sid]=parts;
+            db.ref('spools/'+sec+'/'+key+'/'+sid+'/nakladkaId').set(nid);
+          }
+        });
+        fixed++;
+      }
+    });
+  });
+  console.log('fixBalikNakladkaId: opravených',fixed,'balíkov');
+  return fixed;
+};
+
 function listenNakladky(){
   db.ref('nakladky').on('value',snap=>{
     nakladky=snap.val()||{};
+    setTimeout(window.fixBalikNakladkaId, 1000);
     renderNakladkaGrid();
     if(curIso) renderSpoolTable();
     renderPrehlad();
