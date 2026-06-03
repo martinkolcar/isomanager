@@ -257,6 +257,7 @@ window.doLogout = async function(){
 </script>
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="isometries_data.js?v=2"></script>
@@ -2556,6 +2557,31 @@ tr:hover td{background:var(--surface2)}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 
+
+/* ===== SCANNER ===== */
+.scanner-overlay{display:none;position:fixed;inset:0;background:#000;z-index:9999;flex-direction:column}
+.scanner-overlay.show{display:flex}
+.scanner-video-wrap{flex:1;position:relative;overflow:hidden}
+#isoScanVideo{width:100%;height:100%;object-fit:cover}
+.scanner-box{position:absolute;left:5%;right:5%;top:50%;transform:translateY(-50%);height:90px;border:3px solid #38bdf8;border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,0.55)}
+.scanner-line{position:absolute;left:0;right:0;height:2px;background:#38bdf8;animation:scanAnim 1.5s linear infinite}
+@keyframes scanAnim{0%{top:0}100%{top:78px}}
+.scanner-hint{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:11px;color:#94a3b8}
+.scanner-result{padding:14px 16px;background:var(--surface2);border-top:1px solid var(--border);display:none}
+.scanner-match{font-size:18px;font-weight:900;color:var(--green);letter-spacing:1px;margin-bottom:8px}
+.scanner-raw{font-size:11px;color:var(--text3);margin-bottom:6px;word-break:break-all}
+.scanner-btns{display:flex;gap:8px;margin-bottom:8px}
+.scanner-top-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.scanner-top-item{background:var(--surface2);border:1px solid #38bdf8;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;color:var(--text)}
+.scanner-processing{padding:20px;text-align:center;color:var(--text3);font-size:14px;display:none}
+.scanner-footer{padding:14px 16px;display:flex;gap:10px;background:var(--surface2);border-top:1px solid var(--border)}
+.scanner-list{max-height:180px;overflow-y:auto;margin-top:6px;border:1px solid var(--border);border-radius:6px}
+.scanner-item{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-bottom:1px solid var(--border);font-size:12px;font-family:monospace}
+.foto-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.foto-thumb{width:80px;height:80px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid var(--border)}
+.foto-lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.foto-lightbox.show{display:flex}
+.foto-lightbox img{max-width:95vw;max-height:82vh;border-radius:8px}
 /* ===== MOBILE RESPONSIVE ===== */
 @media (max-width: 700px) {
   /* TOPBAR */
@@ -2665,6 +2691,7 @@ tr:hover td{background:var(--surface2)}
     <button class="btn btn-purple" onclick="openNakladkaModal()">🚛 <span class="btn-text">Nová nakladka</span></button>
     <div style="display:flex;align-items:center;gap:8px;margin-left:8px;flex-shrink:0">
       <span id="userNameDisplay" style="font-size:11px;color:var(--text2);font-family:monospace;white-space:nowrap"></span>
+      <button onclick="openScannerModal()" style="background:var(--surface2);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px;color:var(--text)">📋 Odoslať obalky</button>
       <button onclick="openLogPanel()" title="Aktivita" style="position:relative;background:var(--surface2);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:15px;display:inline-flex;align-items:center;justify-content:center" id="logBell">
         🔔
         <span id="logBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#e57373;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;align-items:center;justify-content:center;font-family:monospace">0</span>
@@ -5161,6 +5188,7 @@ function renderNakladkaGrid(){
       <div class="nc-sub">${cnt} spool${cnt!==1?'ov':''} ${balikCnt?'· '+balikCnt+' bal.':''} ${nk.volnyMaterial&&nk.volnyMaterial.length ? '· '+nk.volnyMaterial.length+' mat.' : ''}</div>
       <div class="nc-acts">
         <button class="sbtn" onclick="showNakladkaDetail('${nid}')">👁</button>
+        <button class="sbtn" onclick="openNakladkaFoto('${nid}')" title="Fotky" style="font-size:13px">📷</button>
         <button class="sbtn" onclick="editNakladka('${nid}')">✏️</button>
         <button class="sbtn" onclick="exportNakladkaPdf('${nid}')">📄 PDF</button>
         <button class="sbtn" onclick="exportNakladkaExcel('${nid}')">📊 Excel</button>
@@ -5553,6 +5581,7 @@ function editNakladka(nid){
   // show available baliky
   buildEnkBalikList(nid);
   buildEnkCurrentBalikList(nid);
+  renderEnkFotoGrid(nid);
   // show available spools to add
   _enkSelectedSpools = new Set();
   const enkBtn = document.getElementById('enkSaveBtn');
@@ -6163,6 +6192,235 @@ initAvPick();
   } catch(e){}
 })();
 
+// ===== SCANNER =====
+var _scanStream = null, _scanWorker = null, _scanResult = null, _scanList = [];
+
+window.openScannerModal = function(){
+  _scanList = [];
+  renderScanList();
+  document.getElementById('scannerModal').style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9990;align-items:center;justify-content:center';
+};
+window.closeScannerModal = function(){
+  closeScanOverlay();
+  document.getElementById('scannerModal').style.display='none';
+};
+
+window.openScanOverlay = async function(){
+  const ov = document.getElementById('scanOverlay');
+  ov.classList.add('show');
+  document.getElementById('scanResultPanel').style.display='none';
+  document.getElementById('scanProcessing').style.display='none';
+  document.getElementById('scanCaptureBtn').style.display='block';
+  document.getElementById('scanCaptureBtn').textContent='📷 Skenuj';
+  try {
+    _scanStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
+    document.getElementById('isoScanVideo').srcObject = _scanStream;
+    if(!_scanWorker) _scanWorker = await Tesseract.createWorker('eng');
+  } catch(e){ alert('Kamera: '+e.message); closeScanOverlay(); }
+};
+
+window.closeScanOverlay = function(){
+  if(_scanStream){ _scanStream.getTracks().forEach(t=>t.stop()); _scanStream=null; }
+  document.getElementById('isoScanVideo').srcObject=null;
+  document.getElementById('scanOverlay').classList.remove('show');
+};
+
+window.captureIso = async function(){
+  const video = document.getElementById('isoScanVideo');
+  const box = document.getElementById('isoScanBox');
+  if(!video.videoWidth){ alert('Kamera nie je pripravená'); return; }
+  document.getElementById('scanCaptureBtn').textContent='⏳';
+  document.getElementById('scanProcessing').style.display='block';
+  document.getElementById('scanResultPanel').style.display='none';
+  const vRect=video.getBoundingClientRect(), bRect=box.getBoundingClientRect();
+  const vw=video.videoWidth, vh=video.videoHeight;
+  const scale=Math.min(vRect.width/vw,vRect.height/vh);
+  const rendW=vw*scale, rendH=vh*scale;
+  const ox=(vRect.width-rendW)/2, oy=(vRect.height-rendH)/2;
+  const sx=Math.max(0,(bRect.left-vRect.left-ox)/scale);
+  const sy=Math.max(0,(bRect.top-vRect.top-oy)/scale);
+  const sw=Math.min(vw-sx,bRect.width/scale);
+  const sh=Math.min(vh-sy,bRect.height/scale);
+  const canvas=document.getElementById('scanCanvas2');
+  canvas.width=sw*2; canvas.height=sh*2;
+  const ctx=canvas.getContext('2d');
+  ctx.filter='contrast(1.8) brightness(1.15) grayscale(1)';
+  ctx.scale(2,2);
+  ctx.drawImage(video,sx,sy,sw,sh,0,0,sw,sh);
+  try {
+    const result = await _scanWorker.recognize(canvas);
+    const rawText = (result.data.text||'').trim();
+    const match = findIsoInText(rawText);
+    document.getElementById('scanProcessing').style.display='none';
+    document.getElementById('scanCaptureBtn').style.display='none';
+    document.getElementById('scanRaw').textContent='OCR: '+rawText.replace(/\n/g,' ').substring(0,80);
+    if(match.best){
+      _scanResult = match.best;
+      document.getElementById('scanMatch').textContent=match.best;
+      const others=match.top.filter(x=>x.iso!==match.best).slice(0,5);
+      const topWrap=document.getElementById('scanTopWrap');
+      if(others.length){
+        document.getElementById('scanTopList').innerHTML=others.map(x=>`<div class="scanner-top-item" onclick="selectScanTop('${x.iso}')">${x.iso}</div>`).join('');
+        topWrap.style.display='block';
+      } else topWrap.style.display='none';
+    } else if(match.top.length){
+      _scanResult=match.top[0].iso;
+      document.getElementById('scanMatch').textContent=match.top[0].iso+' ?';
+      document.getElementById('scanTopList').innerHTML=match.top.map(x=>`<div class="scanner-top-item" onclick="selectScanTop('${x.iso}')">${x.iso}</div>`).join('');
+      document.getElementById('scanTopWrap').style.display='block';
+    } else {
+      _scanResult=null;
+      document.getElementById('scanMatch').textContent='Nerozpoznané';
+      document.getElementById('scanTopWrap').style.display='none';
+    }
+    document.getElementById('scanResultPanel').style.display='block';
+  } catch(e){
+    document.getElementById('scanProcessing').style.display='none';
+    document.getElementById('scanCaptureBtn').style.display='block';
+    document.getElementById('scanCaptureBtn').textContent='📷 Skenuj';
+    alert('OCR chyba: '+e.message);
+  }
+};
+
+window.selectScanTop = function(iso){ _scanResult=iso; document.getElementById('scanMatch').textContent=iso; document.getElementById('scanTopWrap').style.display='none'; };
+window.confirmScanResult = function(){ if(_scanResult){ addScanIso(_scanResult); retryScanCapture(); } };
+window.retryScanCapture = function(){ _scanResult=null; document.getElementById('scanResultPanel').style.display='none'; document.getElementById('scanCaptureBtn').style.display='block'; document.getElementById('scanCaptureBtn').textContent='📷 Skenuj'; };
+
+function addScanIso(val){
+  val=(val||'').trim().toUpperCase();
+  if(!val) return;
+  _scanList.push({val,time:new Date().toLocaleTimeString('sk-SK')});
+  renderScanList();
+}
+window.addScanManual = function(){
+  const inp=document.getElementById('scanManualInp');
+  if(inp.value.trim()) addScanIso(inp.value.trim());
+  inp.value='';
+};
+window.undoScan = function(){ if(_scanList.length){ _scanList.pop(); renderScanList(); } };
+window.clearScanList = function(){ if(_scanList.length&&confirm('Vymazať všetky?')){ _scanList=[]; renderScanList(); } };
+
+function renderScanList(){
+  const el=document.getElementById('scanListBody');
+  const counts={};
+  _scanList.forEach(r=>{ counts[r.val]=(counts[r.val]||0)+1; });
+  document.getElementById('scanCount').textContent=_scanList.length;
+  el.innerHTML=_scanList.map((r,i)=>`<div class="scanner-item" style="${counts[r.val]>1?'color:#fb923c':''}"><span style="font-weight:700">${r.val}</span><span style="color:var(--text3);font-size:10px">${r.time}</span></div>`).reverse().join('');
+}
+
+window.exportScanExcel = function(){
+  if(!_scanList.length){ alert('Žiadne izometrie!'); return; }
+  const counts={};
+  _scanList.forEach(r=>{ counts[r.val]=(counts[r.val]||0)+1; });
+  const data=[['#','Izometria','Čas','Duplicitná']];
+  _scanList.forEach((r,i)=>data.push([i+1,r.val,r.time,counts[r.val]>1?'ÁNO':'']));
+  data.push([],['Celkom:',_scanList.length],['Unikátnych:',Object.keys(counts).length]);
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[{wch:5},{wch:35},{wch:12},{wch:12}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Izometrie');
+  XLSX.writeFile(wb,'skenovanie_'+today()+'.xlsx');
+};
+
+function findIsoInText(text){
+  const isoList = Object.values(ISOMETRIES_DATA).flat();
+  if(!isoList.length) return {best:null,top:[]};
+  function fix(s){ return s.toUpperCase().replace(/O/g,'0').replace(/[lI]/g,'1').replace(/S/g,'5').replace(/Z/g,'2').replace(/B/g,'8').replace(/[^A-Z0-9]/g,''); }
+  const rawUp=text.toUpperCase();
+  const rawNoSep=rawUp.replace(/[^A-Z0-9]/g,'');
+  const rawFixed=fix(rawNoSep);
+  const tokens=(rawUp.match(/[A-Z0-9][A-Z0-9\-]{3,}/g)||[]);
+  const scored=isoList.map(iso=>{
+    const ic=iso.toUpperCase();
+    const icNoSep=ic.replace(/[^A-Z0-9]/g,'');
+    const icFixed=fix(icNoSep);
+    const segs=ic.split(/[^A-Z0-9]+/).filter(s=>s.length>0);
+    let score=0;
+    if(rawNoSep.includes(icNoSep)||rawFixed.includes(icFixed)) return {iso,score:2000};
+    segs.forEach(seg=>{ if(seg.length>=2&&(rawNoSep.includes(seg)||rawFixed.includes(fix(seg)))) score+=seg.length*15; });
+    tokens.forEach(tok=>{ const t=tok.replace(/[^A-Z0-9]/g,''); if(t.length>=3&&(icNoSep.includes(t)||fix(icNoSep).includes(fix(t)))) score+=t.length*20; });
+    return {iso,score};
+  });
+  scored.sort((a,b)=>b.score-a.score);
+  const top=scored.filter(x=>x.score>=60).slice(0,8);
+  let best=null;
+  if(top.length>0){ if(top[0].score>=400) best=top[0].iso; else if(top.length>=2&&top[0].score>=top[1].score*2&&top[0].score>=150) best=top[0].iso; }
+  return {best,top};
+}
+
+// ===== FOTKY K NAKLADKE =====
+let _fotoNakId = null;
+
+window.openNakladkaFoto = function(nid){
+  _fotoNakId = nid;
+  const nk = nakladky[nid]; if(!nk) return;
+  document.getElementById('fotoNakName').textContent = nk.name||nid;
+  renderFotoGrid(nid);
+  document.getElementById('fotoModal').style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9991;align-items:center;justify-content:center';
+};
+window.closeFotoModal = function(){ document.getElementById('fotoModal').style.display='none'; _fotoNakId=null; };
+
+function renderFotoGrid(nid){
+  const nk=nakladky[nid]||{};
+  const fotos=nk.fotos||[];
+  const grid=document.getElementById('fotoGrid');
+  if(!fotos.length){ grid.innerHTML='<div style="color:var(--text3);font-size:12px">Žiadne fotky</div>'; return; }
+  grid.innerHTML=fotos.map((f,i)=>`<div style="position:relative"><img class="foto-thumb" src="${f.data}" onclick="openFotoLightbox('${f.data}')" /><button onclick="deleteFoto('${nid}',${i})" style="position:absolute;top:-4px;right:-4px;background:#e57373;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center">✕</button></div>`).join('');
+}
+
+window.addFotoFromFile = function(){
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='image/*'; inp.multiple=true;
+  inp.onchange=async function(){
+    for(const file of inp.files){
+      const data = await fileToBase64(file);
+      saveFoto(_fotoNakId, data);
+    }
+  };
+  inp.click();
+};
+
+window.addFotoFromCamera = function(){
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='image/*'; inp.capture='environment';
+  inp.onchange=async function(){
+    if(inp.files[0]){
+      const data=await fileToBase64(inp.files[0]);
+      saveFoto(_fotoNakId, data);
+    }
+  };
+  inp.click();
+};
+
+function fileToBase64(file){
+  return new Promise(res=>{
+    const reader=new FileReader();
+    reader.onload=e=>res(e.target.result);
+    reader.readAsDataURL(file);
+  });
+}
+
+function saveFoto(nid, data){
+  const nk=nakladky[nid]||{};
+  const fotos=[...(nk.fotos||[]),{data,ts:Date.now()}];
+  db.ref('nakladky/'+nid+'/fotos').set(fotos);
+  setTimeout(()=>renderFotoGrid(nid),500);
+}
+
+window.deleteFoto = function(nid, idx){
+  if(!confirm('Zmazať fotku?')) return;
+  const nk=nakladky[nid]||{};
+  const fotos=(nk.fotos||[]).filter((_,i)=>i!==idx);
+  db.ref('nakladky/'+nid+'/fotos').set(fotos);
+  setTimeout(()=>renderFotoGrid(nid),400);
+};
+
+window.openFotoLightbox = function(src){
+  document.getElementById('fotoLightboxImg').src=src;
+  document.getElementById('fotoLightbox').classList.add('show');
+};
+window.closeFotoLightbox = function(){ document.getElementById('fotoLightbox').classList.remove('show'); };
+
 </script>
 
 <!-- MODAL: Upraviť nakladku --><!-- MODAL: Upraviť nakladku -->
@@ -6199,6 +6457,12 @@ initAvPick();
       </select>
     </div>
     <div class="spool-check-list" id="enkSpList"></div>
+    <div class="m-sec-title" style="margin-top:12px">Fotky</div>
+    <div id="enkFotoGrid" class="foto-grid" style="margin-bottom:8px;min-height:40px"></div>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <button onclick="addFotoFromCameraEdit()" class="btn btn-blue" style="flex:1;padding:6px;font-size:12px">📷 Odfotiť</button>
+      <button onclick="addFotoFromFileEdit()" class="btn" style="flex:1;padding:6px;font-size:12px">🖼 Zo súboru</button>
+    </div>
     <div class="m-sec-title" style="margin-top:12px">Voľný materiál</div>
     <div id="enkMatCurrentList" style="margin-bottom:6px"></div>
     <div id="enkMatList" style="margin-bottom:6px"></div>
@@ -6391,7 +6655,7 @@ initAvPick();
 
 <!-- LOGIN SCREEN -->
 <div id="loginScreen" style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#000">
-  <video autoplay muted loop playsinline id="loginVideo" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:1">
+  <video autoplay muted loop playsinline id="loginVideo" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:1" oncanplay="this.playbackRate=0.75">
     <source src="login_bg.mp4" type="video/mp4">
   </video>
   <script>document.getElementById('loginVideo').playbackRate=0.6;</script>
@@ -6456,6 +6720,93 @@ initAvPick();
       <div style="color:#567;font-size:12px">Načítavam...</div>
     </div>
   </div>
+</div>
+
+
+<!-- SCANNER MODAL -->
+<div id="scannerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9990;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border-radius:12px;width:95%;max-width:500px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;gap:8px">
+        <button onclick="setScanTab('scan')" id="scanTab1" class="btn btn-blue" style="padding:5px 12px;font-size:12px">📷 Skenovanie</button>
+        <button onclick="setScanTab('history')" id="scanTab2" class="btn" style="padding:5px 12px;font-size:12px">📦 História obalok</button>
+      </div>
+      <button onclick="closeScannerModal()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text2)">✕</button>
+    </div>
+    <!-- TAB: Skenovanie -->
+    <div id="scanTabScan">
+      <div style="padding:12px 16px;display:flex;gap:8px">
+        <button onclick="openScanOverlay()" class="btn btn-blue" style="flex:1">📷 Otvoriť kameru</button>
+        <input id="scanManualInp" class="m-inp" placeholder="Zadaj ručne..." style="flex:2" onkeydown="if(event.key==='Enter')addScanManual()" />
+        <button onclick="addScanManual()" class="btn" style="padding:6px 10px">+</button>
+      </div>
+      <div style="padding:0 16px;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:12px;color:var(--text2)">Naskenované: <strong id="scanCount">0</strong></span>
+        <div style="display:flex;gap:6px">
+          <button onclick="undoScan()" class="btn" style="padding:4px 10px;font-size:12px">↩</button>
+          <button onclick="clearScanList()" class="btn" style="padding:4px 10px;font-size:12px;background:#e57373;color:#fff">🗑</button>
+          <button onclick="exportScanExcel()" class="btn btn-green" style="padding:4px 10px;font-size:12px">📥 Excel</button>
+        </div>
+      </div>
+      <div id="scanListBody" class="scanner-list" style="margin:8px 16px;flex:1;overflow-y:auto"></div>
+    </div>
+    <!-- TAB: Historia obalok -->
+    <div id="scanTabHistory" style="display:none">
+      <div style="padding:8px 16px;display:flex;gap:8px;align-items:center">
+        <input class="m-inp" id="obalkySearch" placeholder="Hľadaj izometriu..." oninput="renderObalkyHistory()" style="flex:1" />
+        <button onclick="exportObalkyExcel()" class="btn btn-green" style="padding:5px 10px;font-size:12px">📥 Excel</button>
+      </div>
+      <div id="obalkyHistoryList" class="scanner-list" style="margin:0 16px 12px;max-height:350px;overflow-y:auto"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SCANNER OVERLAY (fullscreen kamera) -->
+<div class="scanner-overlay" id="scanOverlay">
+  <div class="scanner-video-wrap">
+    <video id="isoScanVideo" autoplay playsinline muted></video>
+    <div class="scanner-box" id="isoScanBox"><div class="scanner-line"></div></div>
+    <div class="scanner-hint">Namier na názov izometrie</div>
+  </div>
+  <div class="scanner-processing" id="scanProcessing">⏳ Čítam text...</div>
+  <div class="scanner-result" id="scanResultPanel">
+    <div class="scanner-raw" id="scanRaw"></div>
+    <div class="scanner-match" id="scanMatch"></div>
+    <div class="scanner-btns">
+      <button class="btn btn-green" onclick="confirmScanResult()" style="flex:1;padding:12px">✅ Potvrď</button>
+      <button class="btn" onclick="retryScanCapture()" style="padding:12px 16px">🔄 Znova</button>
+    </div>
+    <div id="scanTopWrap" style="display:none">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Iné možnosti:</div>
+      <div class="scanner-top-list" id="scanTopList"></div>
+    </div>
+  </div>
+  <div class="scanner-footer">
+    <button class="btn btn-blue" id="scanCaptureBtn" onclick="captureIso()" style="flex:1;padding:14px;font-size:16px">📷 Skenuj</button>
+    <button class="btn" onclick="closeScanOverlay()" style="padding:14px 18px">✕</button>
+  </div>
+</div>
+<canvas id="scanCanvas2" style="display:none"></canvas>
+
+<!-- FOTKY K NAKLADKE MODAL -->
+<div id="fotoModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9991;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border-radius:12px;width:95%;max-width:500px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)">
+      <span style="font-weight:700;font-size:15px">📷 Fotky — <span id="fotoNakName"></span></span>
+      <button onclick="closeFotoModal()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text2)">✕</button>
+    </div>
+    <div style="padding:12px 16px;display:flex;gap:8px">
+      <button onclick="addFotoFromCamera()" class="btn btn-blue" style="flex:1">📷 Odfotiť</button>
+      <button onclick="addFotoFromFile()" class="btn" style="flex:1">🖼 Zo súboru</button>
+    </div>
+    <div id="fotoGrid" class="foto-grid" style="padding:0 16px 16px;overflow-y:auto;flex:1"></div>
+  </div>
+</div>
+
+<!-- FOTO LIGHTBOX -->
+<div class="foto-lightbox" id="fotoLightbox" onclick="closeFotoLightbox()">
+  <img id="fotoLightboxImg" src="" />
+  <div style="color:#fff;font-size:12px">Klikni kdekoľvek pre zatvorenie</div>
 </div>
 
 </body>
