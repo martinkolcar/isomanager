@@ -41,6 +41,18 @@ onAuthStateChanged(_auth, (user) => {
     }
     if(typeof initApp === 'function') initApp();
     setTimeout(window._startLogListener, 1000);
+    // Session enforcement - one device at a time (nie pre admina)
+    if(user.email !== 'martinkolcar@iso.sk'){
+      const sessionId = Math.random().toString(36).slice(2)+Date.now();
+      window._sessionId = sessionId;
+      db.ref('sessions/'+user.uid).set(sessionId);
+      db.ref('sessions/'+user.uid).on('value', snap=>{
+        if(snap.val() && snap.val() !== window._sessionId){
+          alert('Bol si prihlásený na inom zariadení. Budeš odhlásený.');
+          signOut(window._auth);
+        }
+      });
+    }
   } else {
     document.getElementById('loginScreen').style.display='flex';
     document.getElementById('app').style.display='none';
@@ -4633,16 +4645,6 @@ function switchSec(sec, el){
 
 // ===== SIDEBAR =====
 function isoKey(iso){ return iso.replace(/[^a-zA-Z0-9_\-]/g,'_'); }
-
-// Zapíše do správneho Firebase kľúča - skontroluje či existuje _Sheet1 variant
-function dbSetSpool(sec, key, sid, data){
-  const realKey = spools[sec+'/'+key+'_Sheet1'] && spools[sec+'/'+key+'_Sheet1'][sid]
-    ? key+'_Sheet1'
-    : spools[sec+'/'+key] && spools[sec+'/'+key][sid]
-      ? key
-      : key+'_Sheet1'; // fallback na _Sheet1 ak nevieme
-  return db.ref('spools/'+sec+'/'+realKey+'/'+sid).update(data);
-}
 function getSpools(sec,iso){ return spools[sec+'/'+isoKey(iso)]||{}; }
 
 function renderSb(q,filter){
@@ -4929,7 +4931,8 @@ function saveBalik(){
   // mark spools as in balik
   checked.forEach(v=>{
     const [sec,key,sid]=v.split('|');
-    dbSetSpool(sec, key, sid, {balikId: bid,
+    db.ref('spools/'+sec+'/'+key+'/'+sid+'/balikId').set(bid);
+    db.ref('spools/'+sec+'/'+key+'/'+sid).update({
       vyvezene: true,
       vyvezeneKto: me.name,
       vyvezeneKedy: new Date().toLocaleString('sk-SK')
@@ -5107,7 +5110,7 @@ function saveNakladka(){
     (bk.spools||[]).forEach(sv=>{
       const [sec,key,sid]=sv.split('|');
       spoolRefs.push({sec,key,sid});
-      dbSetSpool(sec, key, sid, {nakladkaId: nid});
+      db.ref('spools/'+sec+'/'+key+'/'+sid+'/nakladkaId').set(nid);
     });
     db.ref('baliky/'+bid+'/nakladkaId').set(nid);
   });
@@ -5174,7 +5177,7 @@ function deleteNakladka(nid){
   const nk=nakladky[nid]; if(!nk) return;
   (nk.spools||[]).forEach(v=>{
     const [sec,key,sid]=v.split('|');
-    dbSetSpool(sec, key, sid, {nakladkaId: ''});
+    db.ref('spools/'+sec+'/'+key+'/'+sid+'/nakladkaId').set('');
   });
   (nk.balikIds||[]).forEach(bid=>{
     db.ref('baliky/'+bid+'/nakladkaId').set('');
@@ -5720,7 +5723,7 @@ function saveEditNakladka(){
     db.ref('nakladky/'+nid+'/spools').set(newSpools);
     checked.forEach(v=>{
       const [sec,key,sid] = v.split('|');
-      dbSetSpool(sec, key, sid, {
+      db.ref('spools/'+sec+'/'+key+'/'+sid).update({
         nakladkaId: nid,
         vyvezene: true,
         vyvezeneKto: me.name,
