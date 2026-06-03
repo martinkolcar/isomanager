@@ -4633,6 +4633,16 @@ function switchSec(sec, el){
 
 // ===== SIDEBAR =====
 function isoKey(iso){ return iso.replace(/[^a-zA-Z0-9_\-]/g,'_'); }
+
+// Zapíše do správneho Firebase kľúča - skontroluje či existuje _Sheet1 variant
+function dbSetSpool(sec, key, sid, data){
+  const realKey = spools[sec+'/'+key+'_Sheet1'] && spools[sec+'/'+key+'_Sheet1'][sid]
+    ? key+'_Sheet1'
+    : spools[sec+'/'+key] && spools[sec+'/'+key][sid]
+      ? key
+      : key+'_Sheet1'; // fallback na _Sheet1 ak nevieme
+  return db.ref('spools/'+sec+'/'+realKey+'/'+sid).update(data);
+}
 function getSpools(sec,iso){ return spools[sec+'/'+isoKey(iso)]||{}; }
 
 function renderSb(q,filter){
@@ -4919,8 +4929,7 @@ function saveBalik(){
   // mark spools as in balik
   checked.forEach(v=>{
     const [sec,key,sid]=v.split('|');
-    db.ref('spools/'+sec+'/'+key+'/'+sid+'/balikId').set(bid);
-    db.ref('spools/'+sec+'/'+key+'/'+sid).update({
+    dbSetSpool(sec, key, sid, {balikId: bid,
       vyvezene: true,
       vyvezeneKto: me.name,
       vyvezeneKedy: new Date().toLocaleString('sk-SK')
@@ -5098,7 +5107,7 @@ function saveNakladka(){
     (bk.spools||[]).forEach(sv=>{
       const [sec,key,sid]=sv.split('|');
       spoolRefs.push({sec,key,sid});
-      db.ref('spools/'+sec+'/'+key+'/'+sid+'/nakladkaId').set(nid);
+      dbSetSpool(sec, key, sid, {nakladkaId: nid});
     });
     db.ref('baliky/'+bid+'/nakladkaId').set(nid);
   });
@@ -5165,7 +5174,7 @@ function deleteNakladka(nid){
   const nk=nakladky[nid]; if(!nk) return;
   (nk.spools||[]).forEach(v=>{
     const [sec,key,sid]=v.split('|');
-    db.ref('spools/'+sec+'/'+key+'/'+sid+'/nakladkaId').set('');
+    dbSetSpool(sec, key, sid, {nakladkaId: ''});
   });
   (nk.balikIds||[]).forEach(bid=>{
     db.ref('baliky/'+bid+'/nakladkaId').set('');
@@ -5711,7 +5720,7 @@ function saveEditNakladka(){
     db.ref('nakladky/'+nid+'/spools').set(newSpools);
     checked.forEach(v=>{
       const [sec,key,sid] = v.split('|');
-      db.ref('spools/'+sec+'/'+key+'/'+sid).update({
+      dbSetSpool(sec, key, sid, {
         nakladkaId: nid,
         vyvezene: true,
         vyvezeneKto: me.name,
