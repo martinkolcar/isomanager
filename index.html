@@ -124,24 +124,33 @@ window._startLogListener = function(){
 window.runFixBaliky = function(){
   const log = document.getElementById('fixBalikLog');
   log.textContent = 'Opravujem...';
-  let fixed = 0;
+  let fixS = 0;
   const tasks = [];
-  Object.entries(nakladky).forEach(([nid, nk]) => {
-    (nk.balikIds||[]).forEach(bid => {
-      const bk = baliky[bid];
-      if(bk && !bk.nakladkaId) {
-        tasks.push(db.ref('baliky/'+bid+'/nakladkaId').set(nid));
-        (bk.spools||[]).forEach(v => {
-          const p = v.split('|');
-          if(p.length===3) tasks.push(db.ref('spools/'+p[0]+'/'+p[1]+'/'+p[2]+'/nakladkaId').set(nid));
-        });
-        fixed++;
+  // For each balik, write balikId and nakladkaId to all its spools
+  Object.entries(baliky).forEach(([bid, bk]) => {
+    if(!bk||!bk.spools) return;
+    // find nakladka for this balik
+    let nid = bk.nakladkaId || '';
+    if(!nid) Object.entries(nakladky).forEach(([n,nk])=>{ if(!nid&&(nk.balikIds||[]).includes(bid)) nid=n; });
+    bk.spools.forEach(v => {
+      const p = v.split('|'); if(p.length!==3) return;
+      const [sec,key,sid] = p;
+      const sp = (spools[sec+'/'+key]||{})[sid] || (spools[sec+'/'+key+'_Sheet1']||{})[sid];
+      const realKey = spools[sec+'/'+key+'/'+sid] ? key : key+'_Sheet1';
+      const updates = {};
+      if(!sp || !sp.balikId) updates.balikId = bid;
+      if(!sp || !sp.nakladkaId) updates.nakladkaId = nid;
+      if(Object.keys(updates).length){
+        tasks.push(db.ref('spools/'+sec+'/'+key+'/'+sid).update(updates));
+        tasks.push(db.ref('spools/'+sec+'/'+key+'_Sheet1/'+sid).update(updates));
+        fixS++;
       }
     });
   });
+  if(!tasks.length){ log.textContent='✅ Všetko správne.'; return; }
   Promise.all(tasks).then(()=>{
-    log.textContent = fixed > 0 ? '✅ Opravených '+fixed+' balíkov! Obnov stránku (F5).' : '✅ Všetko je už správne.';
-  }).catch(e=>{ log.textContent = '❌ Chyba: '+e.message; });
+    log.textContent='✅ Opravených '+fixS+' spoolov. Obnov F5!';
+  }).catch(e=>{ log.textContent='❌ Chyba: '+e.message; });
 };
 
 window.openAdminPanel = function(){
@@ -4815,17 +4824,12 @@ function delSpool(sid){
 // ===== ALL SPOOLS FLAT =====
 function getAllSpools(){
   const res=[];
-  // iterate all actual Firebase keys in spools cache
-  Object.entries(spools).forEach(([secKey, sps])=>{
-    const slash = secKey.indexOf('/');
-    if(slash<0) return;
-    const sec = secKey.substring(0, slash);
-    const key = secKey.substring(slash+1);
-    // find matching iso name from ISOMETRIES_DATA
-    const iso = (ISOMETRIES_DATA[sec]||[]).find(i=>isoKey(i)===key) || key;
-    Object.entries(sps||{}).forEach(([sid,sp])=>{
-      if(!sp||!sp.num) return;
-      res.push({sec,iso,sid,key,...sp});
+  SECTIONS.forEach(sec=>{
+    (ISOMETRIES_DATA[sec]||[]).forEach(iso=>{
+      const k=sec+'/'+isoKey(iso);
+      Object.entries(spools[k]||{}).forEach(([sid,sp])=>{
+        res.push({sec,iso,sid,key:isoKey(iso),...sp});
+      });
     });
   });
   return res;
