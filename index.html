@@ -124,25 +124,24 @@ window._startLogListener = function(){
 window.runFixBaliky = function(){
   const log = document.getElementById('fixBalikLog');
   log.textContent = 'Opravujem...';
-  let fixB=0, fixS=0;
+  let fixed = 0;
   const tasks = [];
   Object.entries(nakladky).forEach(([nid, nk]) => {
     (nk.balikIds||[]).forEach(bid => {
-      const bk = baliky[bid]; if(!bk) return;
-      if(!bk.nakladkaId){ tasks.push(db.ref('baliky/'+bid+'/nakladkaId').set(nid)); fixB++; }
-      // vždy oprav spooly - bez ohľadu na bk.nakladkaId
-      (bk.spools||[]).forEach(v => {
-        const p = v.split('|'); if(p.length!==3) return;
-        const [sec,key,sid] = p;
-        const spNak = (spools[sec+'/'+key]||{})[sid]?.nakladkaId;
-        if(!spNak){ tasks.push(db.ref('spools/'+sec+'/'+key+'/'+sid+'/nakladkaId').set(nid)); fixS++; }
-      });
+      const bk = baliky[bid];
+      if(bk && !bk.nakladkaId) {
+        tasks.push(db.ref('baliky/'+bid+'/nakladkaId').set(nid));
+        (bk.spools||[]).forEach(v => {
+          const p = v.split('|');
+          if(p.length===3) tasks.push(db.ref('spools/'+p[0]+'/'+p[1]+'/'+p[2]+'/nakladkaId').set(nid));
+        });
+        fixed++;
+      }
     });
   });
-  if(!tasks.length){ log.textContent='✅ Všetko správne.'; return; }
   Promise.all(tasks).then(()=>{
-    log.textContent='✅ Opravených '+fixB+' balíkov a '+fixS+' spoolov. Obnov (F5)!';
-  }).catch(e=>{ log.textContent='❌ Chyba: '+e.message; });
+    log.textContent = fixed > 0 ? '✅ Opravených '+fixed+' balíkov! Obnov stránku (F5).' : '✅ Všetko je už správne.';
+  }).catch(e=>{ log.textContent = '❌ Chyba: '+e.message; });
 };
 
 window.openAdminPanel = function(){
@@ -5237,8 +5236,11 @@ function renderPrehlad(){
     </tr></thead>
     <tbody>${rows.map(sp=>{
       const bName=sp.balikId&&baliky[sp.balikId]?`<span class="pkg-chip">${baliky[sp.balikId].name}</span>`:'—';
-      // find nakladka: directly on spool OR via balik
-      const _nid = sp.nakladkaId || (sp.balikId&&baliky[sp.balikId]?baliky[sp.balikId].nakladkaId:'');
+      // find nakladka: directly on spool OR via balik OR scan all nakladky for this balik
+      let _nid = sp.nakladkaId || (sp.balikId&&baliky[sp.balikId]?baliky[sp.balikId].nakladkaId:'');
+      if(!_nid && sp.balikId){
+        Object.entries(nakladky).forEach(([nid2,nk2])=>{ if(!_nid&&(nk2.balikIds||[]).includes(sp.balikId)) _nid=nid2; });
+      }
       const nk = _nid && nakladky[_nid];
       const nName=nk?`<span class="nakladka-chip">${nk.name}</span>`:'—';
       const nDate=nk?nk.date:'';
