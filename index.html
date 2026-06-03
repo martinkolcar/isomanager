@@ -121,6 +121,29 @@ window._startLogListener = function(){
 
 
 
+window.runFixBaliky = function(){
+  const log = document.getElementById('fixBalikLog');
+  log.textContent = 'Opravujem...';
+  let fixed = 0;
+  const tasks = [];
+  Object.entries(nakladky).forEach(([nid, nk]) => {
+    (nk.balikIds||[]).forEach(bid => {
+      const bk = baliky[bid];
+      if(bk && !bk.nakladkaId) {
+        tasks.push(db.ref('baliky/'+bid+'/nakladkaId').set(nid));
+        (bk.spools||[]).forEach(v => {
+          const p = v.split('|');
+          if(p.length===3) tasks.push(db.ref('spools/'+p[0]+'/'+p[1]+'/'+p[2]+'/nakladkaId').set(nid));
+        });
+        fixed++;
+      }
+    });
+  });
+  Promise.all(tasks).then(()=>{
+    log.textContent = fixed > 0 ? '✅ Opravených '+fixed+' balíkov! Obnov stránku (F5).' : '✅ Všetko je už správne.';
+  }).catch(e=>{ log.textContent = '❌ Chyba: '+e.message; });
+};
+
 window.openAdminPanel = function(){
   const panel = document.getElementById('adminPanel');
   panel.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;align-items:center;justify-content:center';
@@ -4813,21 +4836,6 @@ function listenBaliky(){
     renderBalikGrid();
     if(curIso) renderSpoolTable();
     renderPrehlad();
-    // oprav baliky ktore nemaju nakladkaId
-    if(Object.keys(nakladky).length){
-      Object.entries(nakladky).forEach(([nid,nk])=>{
-        (nk.balikIds||[]).forEach(bid=>{
-          const bk=baliky[bid];
-          if(bk && !bk.nakladkaId){
-            db.ref('baliky/'+bid+'/nakladkaId').set(nid);
-            (bk.spools||[]).forEach(v=>{
-              const p=v.split('|');
-              if(p.length===3) db.ref('spools/'+p[0]+'/'+p[1]+'/'+p[2]+'/nakladkaId').set(nid);
-            });
-          }
-        });
-      });
-    }
   });
 }
 
@@ -6407,6 +6415,10 @@ initAvPick();
       <div id="adminUserList" style="font-size:12px;font-family:monospace;color:var(--text2)">Načítavam...</div>
       <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);text-align:center">
         <a href="https://console.firebase.google.com/project/export-app-425db/authentication/users" target="_blank" style="color:#4fc3f7;font-size:12px;text-decoration:none">🔗 Otvoriť Firebase Authentication Console</a>
+      </div>
+      <div style="margin-top:10px;text-align:center">
+        <button onclick="runFixBaliky()" style="background:#e57373;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;cursor:pointer">🔧 Opraviť balíky bez nakladkaId</button>
+        <div id="fixBalikLog" style="font-size:11px;font-family:monospace;margin-top:6px;color:var(--text2)"></div>
       </div>
     </div>
   </div>
