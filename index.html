@@ -5163,8 +5163,9 @@ function populatePrehladFilters(all){
 
   const peds = [...new Set(all.map(sp=>(typeof PED_DATA!=="undefined"&&PED_DATA[sp.sec]&&PED_DATA[sp.sec][sp.iso])||'').filter(Boolean))].sort();
   const baliks = [...new Set(all.map(sp=>sp.balikId&&baliky[sp.balikId]?baliky[sp.balikId].name:'').filter(Boolean))].sort();
-  const naks = [...new Set(all.map(sp=>sp.nakladkaId&&nakladky[sp.nakladkaId]?nakladky[sp.nakladkaId].name:'').filter(Boolean))].sort();
-  const dats = [...new Set(all.map(sp=>sp.nakladkaId&&nakladky[sp.nakladkaId]?nakladky[sp.nakladkaId].date:'').filter(Boolean))].sort().reverse();
+  const _getNak=(sp)=>{const nid=sp.nakladkaId||(sp.balikId&&baliky[sp.balikId]?baliky[sp.balikId].nakladkaId:'');return nid&&nakladky[nid]?nakladky[nid]:null;};
+  const naks = [...new Set(all.map(sp=>{const n=_getNak(sp);return n?n.name:''}).filter(Boolean))].sort();
+  const dats = [...new Set(all.map(sp=>{const n=_getNak(sp);return n?n.date:''}).filter(Boolean))].sort().reverse();
 
   pedEl.innerHTML = '<option value="">PED (všetky)</option>' + peds.map(v=>`<option value="${v}"${v===pedVal?' selected':''}>${v}</option>`).join('');
   balikEl.innerHTML = '<option value="">Balík (všetky)</option>' + baliks.map(v=>`<option value="${v}"${v===balikVal?' selected':''}>${v}</option>`).join('');
@@ -5190,8 +5191,12 @@ function renderPrehlad(){
     if(ql&&!(`sp-${sp.num} ${sp.iso} ${sp.sec}`).toLowerCase().includes(ql)) return false;
     if(filterPed){const p=(typeof PED_DATA!=="undefined"&&PED_DATA[sp.sec]&&PED_DATA[sp.sec][sp.iso])||''; if(p!==filterPed) return false;}
     if(filterBalik){const b=sp.balikId&&baliky[sp.balikId]?baliky[sp.balikId].name:''; if(b!==filterBalik) return false;}
-    if(filterNak){const n=sp.nakladkaId&&nakladky[sp.nakladkaId]?nakladky[sp.nakladkaId].name:''; if(n!==filterNak) return false;}
-    if(filterDat){const d=sp.nakladkaId&&nakladky[sp.nakladkaId]?nakladky[sp.nakladkaId].date:''; if(d!==filterDat) return false;}
+    if(filterNak||filterDat){
+      const _fnid=sp.nakladkaId||(sp.balikId&&baliky[sp.balikId]?baliky[sp.balikId].nakladkaId:'');
+      const _fnk=_fnid&&nakladky[_fnid];
+      if(filterNak){const n=_fnk?_fnk.name:''; if(n!==filterNak) return false;}
+      if(filterDat){const d=_fnk?_fnk.date:''; if(d!==filterDat) return false;}
+    }
     return true;
   }).sort((a,b)=>a.sec.localeCompare(b.sec)||a.iso.localeCompare(b.iso)||(parseInt(a.num)||0)-(parseInt(b.num)||0));
 
@@ -5208,7 +5213,9 @@ function renderPrehlad(){
     </tr></thead>
     <tbody>${rows.map(sp=>{
       const bName=sp.balikId&&baliky[sp.balikId]?`<span class="pkg-chip">${baliky[sp.balikId].name}</span>`:'—';
-      const nk=sp.nakladkaId&&nakladky[sp.nakladkaId];
+      // find nakladka: directly on spool OR via balik
+      const _nid = sp.nakladkaId || (sp.balikId&&baliky[sp.balikId]?baliky[sp.balikId].nakladkaId:'');
+      const nk = _nid && nakladky[_nid];
       const nName=nk?`<span class="nakladka-chip">${nk.name}</span>`:'—';
       const nDate=nk?nk.date:'';
       const ped = (typeof PED_DATA!=="undefined"&&PED_DATA[sp.sec]&&PED_DATA[sp.sec][sp.iso])||'';
