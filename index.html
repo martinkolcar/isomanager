@@ -124,23 +124,33 @@ window._startLogListener = function(){
 window.runFixBaliky = function(){
   const log = document.getElementById('fixBalikLog');
   log.textContent = 'Opravujem...';
-  let fixed = 0;
+  let fixedBalik = 0, fixedSpool = 0;
   const tasks = [];
   Object.entries(nakladky).forEach(([nid, nk]) => {
     (nk.balikIds||[]).forEach(bid => {
-      const bk = baliky[bid];
-      if(bk && !bk.nakladkaId) {
+      const bk = baliky[bid]; if(!bk) return;
+      // fix balik
+      if(!bk.nakladkaId){
         tasks.push(db.ref('baliky/'+bid+'/nakladkaId').set(nid));
-        (bk.spools||[]).forEach(v => {
-          const p = v.split('|');
-          if(p.length===3) tasks.push(db.ref('spools/'+p[0]+'/'+p[1]+'/'+p[2]+'/nakladkaId').set(nid));
-        });
-        fixed++;
+        fixedBalik++;
       }
+      // fix spools in balik - always check
+      (bk.spools||[]).forEach(v => {
+        const p = v.split('|');
+        if(p.length!==3) return;
+        const [sec,key,sid] = p;
+        const sp = (spools[sec+'/'+key]||{})[sid];
+        if(!sp || !sp.nakladkaId){
+          tasks.push(db.ref('spools/'+sec+'/'+key+'/'+sid+'/nakladkaId').set(nid));
+          fixedSpool++;
+        }
+      });
     });
   });
   Promise.all(tasks).then(()=>{
-    log.textContent = fixed > 0 ? '✅ Opravených '+fixed+' balíkov! Obnov stránku (F5).' : '✅ Všetko je už správne.';
+    log.textContent = (fixedBalik+fixedSpool) > 0
+      ? '✅ Opravených '+fixedBalik+' balíkov, '+fixedSpool+' spoolov! Obnov (F5).'
+      : '✅ Všetko je už správne.';
   }).catch(e=>{ log.textContent = '❌ Chyba: '+e.message; });
 };
 
