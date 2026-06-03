@@ -4563,6 +4563,21 @@ function startApp(){
 function initApp(){
   if(!window.DB){ window.addEventListener('fbReady', initApp, {once:true}); return; }
   listenBaliky(); listenNakladky(); listenOnline(); startPresence();
+  // Auto-fix: doplni nakladkaId do balikov ktore ho nemaju
+  setTimeout(function fixMissingBalikNakladkaId(){
+    Object.entries(nakladky).forEach(([nid, nk])=>{
+      (nk.balikIds||[]).forEach(bid=>{
+        const bk = baliky[bid];
+        if(bk && !bk.nakladkaId){
+          db.ref('baliky/'+bid+'/nakladkaId').set(nid);
+          (bk.spools||[]).forEach(v=>{
+            const [sec,key,sid]=v.split('|');
+            if(sec&&key&&sid) db.ref('spools/'+sec+'/'+key+'/'+sid+'/nakladkaId').set(nid);
+          });
+        }
+      });
+    });
+  }, 3000);
   // listen all spools
   SECTIONS.forEach(sec=>{
     db.ref('spools/'+sec).on('value',snap=>{
