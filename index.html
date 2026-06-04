@@ -41,6 +41,7 @@ onAuthStateChanged(_auth, (user) => {
     }
     if(typeof initApp === 'function') initApp();
     setTimeout(window._startLogListener, 1000);
+    setTimeout(applyLang, 500);
     // Session enforcement - one device at a time (nie pre admina)
     if(user.email !== 'martinkolcar@iso.sk'){
       const sessionId = Math.random().toString(36).slice(2)+Date.now();
@@ -2692,7 +2693,13 @@ tr:hover td{background:var(--surface2)}
     <div style="display:flex;align-items:center;gap:8px;margin-left:8px;flex-shrink:0">
       <span id="userNameDisplay" style="font-size:11px;color:var(--text2);font-family:monospace;white-space:nowrap"></span>
       <button onclick="openScannerModal()" style="background:var(--surface2);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px;color:var(--text)">📋 Odoslať obalky</button>
-      <button onclick="openLogPanel()" title="Aktivita" style="position:relative;background:var(--surface2);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:15px;display:inline-flex;align-items:center;justify-content:center" id="logBell">
+      <div style="display:inline-flex;align-items:center;gap:2px;background:var(--surface2);border-radius:6px;padding:3px 4px">
+        <button id="langBtn_sk" onclick="setLang('sk')" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;border-radius:4px" title="Slovenčina">🇸🇰</button>
+        <button id="langBtn_en" onclick="setLang('en')" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;border-radius:4px" title="English">🇬🇧</button>
+        <button id="langBtn_de" onclick="setLang('de')" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;border-radius:4px" title="Deutsch">🇩🇪</button>
+        <button id="langBtn_uk" onclick="setLang('uk')" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;border-radius:4px" title="Українська">🇺🇦</button>
+      </div>
+      <button onclick="openLogPanel()" title="Aktivita"  style="position:relative;background:var(--surface2);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:15px;display:inline-flex;align-items:center;justify-content:center" id="logBell">
         🔔
         <span id="logBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#e57373;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;align-items:center;justify-content:center;font-family:monospace">0</span>
       </button>
@@ -2773,10 +2780,10 @@ tr:hover td{background:var(--surface2)}
       <span style="font-weight:600;font-size:13px">📊 Prehľad všetkých spoolov</span>
       <div class="spacer"></div>
       <button class="filter-chip active" onclick="setPrehladFilter('all',this)">Všetky</button>
-      <button class="filter-chip" onclick="setPrehladFilter('volny',this)">Voľné</button>
-      <button class="filter-chip" onclick="setPrehladFilter('balik',this)">V balíku</button>
-      <button class="filter-chip" onclick="setPrehladFilter('nakladka',this)">V nakladke</button>
-      <button class="filter-chip" onclick="setPrehladFilter('vyvezene',this)">Vyvezené</button>
+      <button class="filter-chip" onclick="setPrehladFilter('volny',this)" data-lang="volny">Voľné</button>
+      <button class="filter-chip" onclick="setPrehladFilter('balik',this)" data-lang="vBaliku">V balíku</button>
+      <button class="filter-chip" onclick="setPrehladFilter('nakladka',this)" data-lang="vNakladke">V nakladke</button>
+      <button class="filter-chip" onclick="setPrehladFilter('vyvezene',this)" data-lang="vyvezene">Vyvezené</button>
       <input class="sb-inp" style="width:140px" placeholder="Hľadaj..." oninput="prehladSearch=this.value;renderPrehlad()" />
       <select class="sb-inp" style="width:110px" id="filterPed" onchange="renderPrehlad()"><option value="">PED (všetky)</option></select>
       <select class="sb-inp" style="width:120px" id="filterBalik" onchange="renderPrehlad()"><option value="">Balík (všetky)</option></select>
@@ -2843,7 +2850,7 @@ tr:hover td{background:var(--surface2)}
 <!-- MODAL: Nová nakladka -->
 <div class="modal-bg" id="nakladkaModal">
   <div class="modal">
-    <h3>🚛 Nová nakladka</h3>
+    <h3>🚛 <span data-lang="novaНakladka">Nová nakladka</span></h3>
     <div class="m-row">
       <div style="flex:1"><label class="m-label">Názov / číslo nakladky *</label><input class="m-inp" id="nakName" placeholder="napr. NK-01" /></div>
       <div style="flex:1"><label class="m-label">Dátum odvozu</label><input class="m-inp" type="date" id="nakDate" /></div>
@@ -6045,7 +6052,7 @@ function showNakladkaDetail(nid){
 
   // baliky section
   if((nk.balikIds||[]).length){
-    html += '<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px">Balíky</div>';
+    html += '<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px" data-lang="baliky">Balíky</div>';
     html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">';
     (nk.balikIds||[]).forEach(bid=>{
       const bk=baliky[bid];
@@ -6432,6 +6439,125 @@ window.openFotoLightbox = function(src){
   document.getElementById('fotoLightbox').classList.add('show');
 };
 window.closeFotoLightbox = function(){ document.getElementById('fotoLightbox').classList.remove('show'); };
+
+// ===== JAZYKY =====
+const LANGS = {
+  sk: {
+    spooly:'Spooly', baliky:'Balíky', nakladky:'Nakladky', prehlad:'Prehľad',
+    novyBalik:'Nový balík', novaНakladka:'Nová nakladka',
+    hladaj:'Hľadaj kód napr. 20080 alebo 712-20019...',
+    novy:'Nový', work:'Vo výrobe', done:'Hotový',
+    vyvezene:'Vyvezené', balik:'Balík', nakladka:'Nakladka', datum:'Dátum',
+    sekcia:'Sekcia', izometria:'Izometria', sp:'SP', popis:'Popis', stav:'Stav',
+    vytvoril:'Vytvoril', volny:'Voľné', vBaliku:'V balíku', vNakladke:'V nakladke',
+    online:'online', admin:'Admin', odoslatObalky:'Odoslať obalky',
+    prihlasitSa:'Prihlásiť sa', meno:'MENO', heslo:'HESLO',
+    ulozitZmeny:'Uložiť zmeny', zrusit:'Zrušiť', vytvorit:'Vytvoriť',
+    vyberIzometriu:'Vyber izometriu', pridatSP:'Pridať SP',
+    poznamka:'Poznámka', dopravca:'Dopravca', datumOdvozu:'Dátum odvozu',
+    nazovNakladky:'Názov nakladky', nazovBalika:'Názov balíka',
+    skenovanie:'Skenovanie', historiaObalok:'História obalok',
+    naskenované:'Naskenované', hladajIzometriu:'Hľadaj alebo zadaj ručne...',
+    odfotit:'Odfotiť', zoSuboru:'Zo súboru', fotky:'Fotky',
+    existujuciUzivatelia:'Existujúci užívatelia', pridatUzivatela:'Pridať užívateľa',
+    odhlasitSa:'Odhlásiť sa', prihlaseniUzivatelia:'Prihlásení užívatelia',
+    ziadniUzivatelia:'Žiadni užívatelia. Pridaj prvého hore.',
+  },
+  en: {
+    spooly:'Spools', baliky:'Packages', nakladky:'Shipments', prehlad:'Overview',
+    novyBalik:'New package', novaНakladka:'New shipment',
+    hladaj:'Search code e.g. 20080 or 712-20019...',
+    novy:'New', work:'In production', done:'Done',
+    vyvezene:'Shipped', balik:'Package', nakladka:'Shipment', datum:'Date',
+    sekcia:'Section', izometria:'Isometry', sp:'SP', popis:'Description', stav:'Status',
+    vytvoril:'Created by', volny:'Free', vBaliku:'In package', vNakladke:'In shipment',
+    online:'online', admin:'Admin', odoslatObalky:'Send envelopes',
+    prihlasitSa:'Log in', meno:'NAME', heslo:'PASSWORD',
+    ulozitZmeny:'Save changes', zrusit:'Cancel', vytvorit:'Create',
+    vyberIzometriu:'Select isometry', pridatSP:'Add SP',
+    poznamka:'Note', dopravca:'Carrier', datumOdvozu:'Shipment date',
+    nazovNakladky:'Shipment name', nazovBalika:'Package name',
+    skenovanie:'Scanning', historiaObalok:'Envelope history',
+    naskenované:'Scanned', hladajIzometriu:'Search or enter manually...',
+    odfotit:'Take photo', zoSuboru:'From file', fotky:'Photos',
+    existujuciUzivatelia:'Existing users', pridatUzivatela:'Add user',
+    odhlasitSa:'Log out', prihlaseniUzivatelia:'Logged in users',
+    ziadniUzivatelia:'No users. Add the first one above.',
+  },
+  de: {
+    spooly:'Spulen', baliky:'Pakete', nakladky:'Lieferungen', prehlad:'Übersicht',
+    novyBalik:'Neues Paket', novaНakladka:'Neue Lieferung',
+    hladaj:'Code suchen z.B. 20080 oder 712-20019...',
+    novy:'Neu', work:'In Arbeit', done:'Fertig',
+    vyvezene:'Versandt', balik:'Paket', nakladka:'Lieferung', datum:'Datum',
+    sekcia:'Abschnitt', izometria:'Isometrie', sp:'SP', popis:'Beschreibung', stav:'Status',
+    vytvoril:'Erstellt von', volny:'Frei', vBaliku:'Im Paket', vNakladke:'In Lieferung',
+    online:'online', admin:'Admin', odoslatObalky:'Umschläge senden',
+    prihlasitSa:'Anmelden', meno:'NAME', heslo:'PASSWORT',
+    ulozitZmeny:'Änderungen speichern', zrusit:'Abbrechen', vytvorit:'Erstellen',
+    vyberIzometriu:'Isometrie wählen', pridatSP:'SP hinzufügen',
+    poznamka:'Notiz', dopravca:'Spediteur', datumOdvozu:'Versanddatum',
+    nazovNakladky:'Lieferungsname', nazovBalika:'Paketname',
+    skenovanie:'Scannen', historiaObalok:'Umschlagverlauf',
+    naskenované:'Gescannt', hladajIzometriu:'Suchen oder manuell eingeben...',
+    odfotit:'Foto aufnehmen', zoSuboru:'Aus Datei', fotky:'Fotos',
+    existujuciUzivatelia:'Bestehende Benutzer', pridatUzivatela:'Benutzer hinzufügen',
+    odhlasitSa:'Abmelden', prihlaseniUzivatelia:'Angemeldete Benutzer',
+    ziadniUzivatelia:'Keine Benutzer. Ersten oben hinzufügen.',
+  },
+  uk: {
+    spooly:'Котушки', baliky:'Пакети', nakladky:'Відправлення', prehlad:'Огляд',
+    novyBalik:'Новий пакет', novaНakladka:'Нове відправлення',
+    hladaj:'Пошук коду напр. 20080 або 712-20019...',
+    novy:'Новий', work:'У виробництві', done:'Готово',
+    vyvezene:'Відправлено', balik:'Пакет', nakladka:'Відправлення', datum:'Дата',
+    sekcia:'Секція', izometria:'Ізометрія', sp:'SP', popis:'Опис', stav:'Статус',
+    vytvoril:'Створив', volny:'Вільні', vBaliku:'У пакеті', vNakladke:'У відправленні',
+    online:'онлайн', admin:'Адмін', odoslatObalky:'Надіслати конверти',
+    prihlasitSa:'Увійти', meno:'ІМЯ', heslo:'ПАРОЛЬ',
+    ulozitZmeny:'Зберегти зміни', zrusit:'Скасувати', vytvorit:'Створити',
+    vyberIzometriu:'Вибрати ізометрію', pridatSP:'Додати SP',
+    poznamka:'Примітка', dopravca:'Перевізник', datumOdvozu:'Дата відправлення',
+    nazovNakladky:'Назва відправлення', nazovBalika:'Назва пакету',
+    skenovanie:'Сканування', historiaObalok:'Історія конвертів',
+    naskenované:'Відскановано', hladajIzometriu:'Пошук або введення вручну...',
+    odfotit:'Сфотографувати', zoSuboru:'З файлу', fotky:'Фото',
+    existujuciUzivatelia:'Існуючі користувачі', pridatUzivatela:'Додати користувача',
+    odhlasitSa:'Вийти', prihlaseniUzivatelia:'Увійшли користувачі',
+    ziadniUzivatelia:'Немає користувачів. Додайте першого вище.',
+  }
+};
+
+let _lang = localStorage.getItem('isoLang')||'sk';
+
+window.t = function(key){ return (LANGS[_lang]||LANGS.sk)[key]||key; };
+
+window.setLang = function(lang){
+  _lang = lang;
+  localStorage.setItem('isoLang', lang);
+  applyLang();
+};
+
+function applyLang(){
+  // Tabs
+  const tabEls = document.querySelectorAll('[data-lang]');
+  tabEls.forEach(el=>{ const k=el.getAttribute('data-lang'); if(k) el.textContent=t(k); });
+  // Placeholder
+  const gs = document.getElementById('globalSearch');
+  if(gs) gs.placeholder = t('hladaj');
+  const smi = document.getElementById('scanManualInp');
+  if(smi) smi.placeholder = t('hladajIzometriu');
+  // Lang button highlight
+  ['sk','en','de','uk'].forEach(l=>{
+    const btn=document.getElementById('langBtn_'+l);
+    if(btn) btn.style.fontWeight = l===_lang ? '900' : '400';
+    if(btn) btn.style.opacity = l===_lang ? '1' : '0.5';
+  });
+}
+
+// Apply on load
+document.addEventListener('DOMContentLoaded', applyLang);
+
 
 window.scanSearchFilter = function(q){
   const drop = document.getElementById('scanSearchDrop');
