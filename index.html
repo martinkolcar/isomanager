@@ -4789,7 +4789,7 @@ function renderSpoolTable(){
     <input class="add-inp" id="newSpNum" placeholder="Číslo SP" data-lang-ph="cisloSP" style="width:90px" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
     <input class="add-inp" id="newSpDesc" placeholder="Popis (voliteľné)" data-lang-ph="popisVolitelny" data-lang-ph="popisVolitelny" style="flex:1;min-width:80px" autocomplete="off" autocorrect="off" spellcheck="false" />
     <select class="add-inp" id="newSpSt" style="width:105px">
-      <option value="new">Nový</option><option value="work">Vo výrobe</option><option value="done">Hotový</option>
+      <option value="new" data-lang="novy">Nový</option><option value="work" data-lang="work">Vo výrobe</option><option value="done" data-lang="done">Hotový</option>
     </select>
     <button class="btn btn-blue" style="width:100%;justify-content:center;margin-top:4px" onclick="addSpool()" id="addSpBtn">＋ ${t('pridatSP')}</button>`;
   wrap.appendChild(tw); wrap.appendChild(ar);
@@ -6470,7 +6470,14 @@ window.applyLang = function applyLang(){
   });
   // update add SP button
   const addSpBtn=document.getElementById('addSpBtn');
-  if(addSpBtn) addSpBtn.textContent='+ '+t('pridatSP').replace('+ ','');
+  if(addSpBtn) addSpBtn.textContent='+ '+t('pridatSP');
+  // update status options
+  const newSpSt=document.getElementById('newSpSt');
+  if(newSpSt){
+    const cur=newSpSt.value;
+    newSpSt.innerHTML=`<option value="new">${t('novy')}</option><option value="work">${t('work')}</option><option value="done">${t('done')}</option>`;
+    newSpSt.value=cur;
+  }
 };
 
 window.scanSearchFilter = function(q){
