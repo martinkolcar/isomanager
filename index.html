@@ -6748,11 +6748,13 @@ window.closeFotoLightbox = function(){ document.getElementById('fotoLightbox').c
     <!-- TAB: Skenovanie -->
     <div id="scanTabScan">
       <div style="padding:12px 16px;position:relative">
-        <div style="display:flex;gap:8px">
-          <input id="scanManualInp" class="m-inp" placeholder="Hľadaj alebo zadaj ručne..." style="flex:1" oninput="scanSearchFilter(this.value)" onkeydown="if(event.key==='Enter'){const f=document.querySelector('#scanSearchDrop .scanner-top-item');if(f){f.click();}else{addScanManual();}}" autocomplete="off" />
-          <button onclick="addScanManual()" class="btn" style="padding:6px 14px;font-weight:700">+</button>
+        <div style="position:relative">
+          <div style="display:flex;gap:8px">
+            <input id="scanManualInp" class="m-inp" placeholder="Hľadaj alebo zadaj ručne..." style="flex:1" oninput="scanSearchFilter(this.value)" onkeydown="if(event.key==='Enter'){const f=document.querySelector('#scanSearchDrop div');if(f){f.dispatchEvent(new MouseEvent('mousedown'));document.getElementById('scanManualInp').value='';document.getElementById('scanSearchDrop').style.display='none';}else{addScanManual();}}" autocomplete="off" />
+            <button onclick="addScanManual()" class="btn" style="padding:6px 14px;font-weight:700">+</button>
+          </div>
+          <div id="scanSearchDrop" style="display:none;position:absolute;left:0;right:0;top:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;max-height:200px;overflow-y:auto;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,.3)"></div>
         </div>
-        <div id="scanSearchDrop" style="display:none;position:absolute;left:16px;right:16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;max-height:200px;overflow-y:auto;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,.3)"></div>
       </div>
       <div style="padding:0 16px;display:flex;align-items:center;justify-content:space-between">
         <span style="font-size:12px;color:var(--text2)">Naskenované: <strong id="scanCount">0</strong></span>
