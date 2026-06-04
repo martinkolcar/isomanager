@@ -63,6 +63,18 @@ onAuthStateChanged(_auth, (user) => {
 window.DBOn = (p, cb) => { dbOnValue(dbRef(window.DB, p), snap => cb(snap)); return () => {}; };
 window.dispatchEvent(new Event('fbReady'));
 
+// ===== JAZYKY - MUSI BYT SKORANE =====
+const LANGS = {
+  sk: { spooly:'Spooly',baliky:'Balíky',nakladky:'Nakladky',prehlad:'Prehľad',novyBalik:'Nový balík',novaНakladka:'Nová nakladka',hladaj:'Hľadaj kód napr. 20080 alebo 712-20019...',novy:'Nový',work:'Vo výrobe',done:'Hotový',vyvezene:'Vyvezené',balik:'Balík',nakladka:'Nakladka',datum:'Dátum',sekcia:'Sekcia',izometria:'Izometria',popis:'Popis',stav:'Stav',vytvoril:'Vytvoril',volny:'Voľné',vBaliku:'V balíku',vNakladke:'V nakladke',online:'online',odoslatObalky:'Odoslať obalky',prihlasitSa:'Prihlásiť sa',meno:'MENO',heslo:'HESLO',ulozitZmeny:'Uložiť zmeny',zrusit:'Zrušiť',vytvorit:'Vytvoriť',vyberIzometriu:'Vyber izometriu',hladajIzo:'Hľadaj izometriu...',vsetky:'Všetky',vyberIzoZoznamu:'Vyber izometriu zo zoznamu',skenovanie:'Skenovanie',historiaObalok:'História obalok',hladajIzometriu:'Hľadaj alebo zadaj ručne...',odfotit:'Odfotiť',zoSuboru:'Zo súboru',fotky:'Fotky',odhlasitSa:'Odhlásiť sa',spoolov:'spoolov',balov:'bal.',matov:'mat.',pridatSP:'Pridať SP',cisloSP:'Číslo SP',popisVolitelny:'Popis (voliteľné)',poznamka:'Pozn.',baliky_nadpis:'BALÍKY',spooly_nadpis:'SPOOLY',volnyMaterial:'VOĽNÝ MATERIÁL',sekcia_nadpis:'SEKCIA',balik_nadpis:'BALÍK',izometria_nadpis:'IZOMETRIA',zlucit:'Zlúčiť s inou nakladkou',spoolov_label:'spoolov' },
+  en: { spooly:'Spools',baliky:'Packages',nakladky:'Shipments',prehlad:'Overview',novyBalik:'New package',novaНakladka:'New shipment',hladaj:'Search code e.g. 20080 or 712-20019...',novy:'New',work:'In production',done:'Done',vyvezene:'Shipped',balik:'Package',nakladka:'Shipment',datum:'Date',sekcia:'Section',izometria:'Isometry',popis:'Description',stav:'Status',vytvoril:'Created by',volny:'Free',vBaliku:'In package',vNakladke:'In shipment',online:'online',odoslatObalky:'Send envelopes',prihlasitSa:'Log in',meno:'NAME',heslo:'PASSWORD',ulozitZmeny:'Save changes',zrusit:'Cancel',vytvorit:'Create',vyberIzometriu:'Select isometry',hladajIzo:'Search isometry...',vsetky:'All',vyberIzoZoznamu:'Select isometry from list',skenovanie:'Scanning',historiaObalok:'Envelope history',hladajIzometriu:'Search or enter manually...',odfotit:'Take photo',zoSuboru:'From file',fotky:'Photos',odhlasitSa:'Log out',spoolov:'spools',balov:'pkg.',matov:'mat.',pridatSP:'Add SP',cisloSP:'SP Number',popisVolitelny:'Description (optional)',poznamka:'Note',baliky_nadpis:'PACKAGES',spooly_nadpis:'SPOOLS',volnyMaterial:'FREE MATERIAL',sekcia_nadpis:'SECTION',balik_nadpis:'PACKAGE',izometria_nadpis:'ISOMETRY',zlucit:'Merge with another shipment',spoolov_label:'spools' },
+  de: { spooly:'Spulen',baliky:'Pakete',nakladky:'Lieferungen',prehlad:'Übersicht',novyBalik:'Neues Paket',novaНakladka:'Neue Lieferung',hladaj:'Code suchen z.B. 20080 oder 712-20019...',novy:'Neu',work:'In Arbeit',done:'Fertig',vyvezene:'Versandt',balik:'Paket',nakladka:'Lieferung',datum:'Datum',sekcia:'Abschnitt',izometria:'Isometrie',popis:'Beschreibung',stav:'Status',vytvoril:'Erstellt von',volny:'Frei',vBaliku:'Im Paket',vNakladke:'In Lieferung',online:'online',odoslatObalky:'Umschläge senden',prihlasitSa:'Anmelden',meno:'NAME',heslo:'Passwort',ulozitZmeny:'Speichern',zrusit:'Abbrechen',vytvorit:'Erstellen',vyberIzometriu:'Isometrie wählen',hladajIzo:'Isometrie suchen...',vsetky:'Alle',vyberIzoZoznamu:'Isometrie aus Liste wählen',skenovanie:'Scannen',historiaObalok:'Umschlagverlauf',hladajIzometriu:'Suchen oder manuell eingeben...',odfotit:'Foto aufnehmen',zoSuboru:'Aus Datei',fotky:'Fotos',odhlasitSa:'Abmelden',spoolov:'Spulen',balov:'Pak.',matov:'Mat.',pridatSP:'SP hinzufügen',cisloSP:'SP-Nummer',popisVolitelny:'Beschreibung (optional)',poznamka:'Notiz',baliky_nadpis:'PAKETE',spooly_nadpis:'SPULEN',volnyMaterial:'FREIES MATERIAL',sekcia_nadpis:'ABSCHNITT',balik_nadpis:'PAKET',izometria_nadpis:'ISOMETRIE',zlucit:'Mit anderer Lieferung zusammenführen',spoolov_label:'Spulen' },
+  uk: { spooly:'Котушки',baliky:'Пакети',nakladky:'Відправлення',prehlad:'Огляд',novyBalik:'Новий пакет',novaНakladka:'Нове відправлення',hladaj:'Пошук коду напр. 20080 або 712-20019...',novy:'Новий',work:'У виробництві',done:'Готово',vyvezene:'Відправлено',balik:'Пакет',nakladka:'Відправлення',datum:'Дата',sekcia:'Секція',izometria:'Ізометрія',popis:'Опис',stav:'Статус',vytvoril:'Створив',volny:'Вільні',vBaliku:'У пакеті',vNakladke:'У відправленні',online:'онлайн',odoslatObalky:'Надіслати конверти',prihlasitSa:'Увійти',meno:'ІМЯ',heslo:'ПАРОЛЬ',ulozitZmeny:'Зберегти',zrusit:'Скасувати',vytvorit:'Створити',vyberIzometriu:'Вибрати ізометрію',hladajIzo:'Пошук ізометрії...',vsetky:'Всі',vyberIzoZoznamu:'Вибрати ізометрію зі списку',skenovanie:'Сканування',historiaObalok:'Історія конвертів',hladajIzometriu:'Пошук або введення вручну...',odfotit:'Сфотографувати',zoSuboru:'З файлу',fotky:'Фото',odhlasitSa:'Вийти',spoolov:'котушок',balov:'пак.',matov:'мат.',pridatSP:'Додати SP',cisloSP:'Номер SP',popisVolitelny:'Опис (необов\'язково)',poznamka:'Примітка',baliky_nadpis:'ПАКЕТИ',spooly_nadpis:'КОТУШКИ',volnyMaterial:'ВІЛЬНИЙ МАТЕРІАЛ',sekcia_nadpis:'СЕКЦІЯ',balik_nadpis:'ПАКЕТ',izometria_nadpis:'ІЗОМЕТРІЯ',zlucit:'Об\'єднати з іншим відправленням',spoolov_label:'котушок' }
+};
+let _lang = localStorage.getItem('isoLang')||'sk';
+window.t = function(key){ return (LANGS[_lang]||LANGS.sk)[key]||key; };
+window.setLang = function(lang){ _lang=lang; localStorage.setItem('isoLang',lang); if(typeof window.applyLang==='function') window.applyLang(); };
+
+
 // ===== ACTIVITY LOG =====
 window.writeLog = function(action, detail){
   const user = window._currentUser;
@@ -4739,9 +4751,9 @@ function renderSpoolTable(){
   } else {
     const tbl=document.createElement('table');
     tbl.innerHTML=`<thead><tr>
-      <th>SP</th><th data-lang="popis">Popis</th><th data-lang="stav">Stav</th>
-      <th title="Vyvezené z haly">✅ <span data-lang="vyvezene">Vyv.</span></th>
-      <th data-lang="balik">Balík</th><th data-lang="nakladka">Nakladka</th><th>Pozn.</th><th></th>
+      <th>SP</th><th>${t('popis')}</th><th>${t('stav')}</th>
+      <th title="Vyvezené z haly">✅ ${t('vyvezene').substring(0,4)}.</th>
+      <th>${t('balik')}</th><th>${t('nakladka')}</th><th>${t('poznamka')}</th><th></th>
     </tr></thead>`;
     const tb=document.createElement('tbody');
     items.forEach(([sid,sp])=>{
@@ -4774,12 +4786,12 @@ function renderSpoolTable(){
   const ar=document.createElement('div'); ar.className='add-row';
   ar.innerHTML=`
     <span style="font-size:11px;color:var(--text2);width:100%;display:block;margin-bottom:4px">Pridať SP:</span>
-    <input class="add-inp" id="newSpNum" placeholder="Číslo SP" style="width:90px" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
-    <input class="add-inp" id="newSpDesc" placeholder="Popis (voliteľné)" data-lang-ph="popisVolitelny" style="flex:1;min-width:80px" autocomplete="off" autocorrect="off" spellcheck="false" />
+    <input class="add-inp" id="newSpNum" placeholder="Číslo SP" data-lang-ph="cisloSP" style="width:90px" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+    <input class="add-inp" id="newSpDesc" placeholder="Popis (voliteľné)" data-lang-ph="popisVolitelny" data-lang-ph="popisVolitelny" style="flex:1;min-width:80px" autocomplete="off" autocorrect="off" spellcheck="false" />
     <select class="add-inp" id="newSpSt" style="width:105px">
       <option value="new">Nový</option><option value="work">Vo výrobe</option><option value="done">Hotový</option>
     </select>
-    <button class="btn btn-blue" style="width:100%;justify-content:center;margin-top:4px" onclick="addSpool()">＋ Pridať SP</button>`;
+    <button class="btn btn-blue" style="width:100%;justify-content:center;margin-top:4px" onclick="addSpool()" id="addSpBtn">＋ Pridať SP</button>`;
   wrap.appendChild(tw); wrap.appendChild(ar);
   body.appendChild(wrap);
 }
@@ -5201,7 +5213,7 @@ function renderNakladkaGrid(){
         <button class="sbtn" onclick="exportNakladkaExcel('${nid}')">📊 Excel</button>
         <button class="sbtn del" onclick="deleteNakladka('${nid}')">🗑</button>
       </div>
-      <button class="sbtn" style="width:100%;margin-top:6px;background:var(--purple-bg);color:var(--purple);border-color:#9b5ad4" onclick="openMergeModal('${nid}')">🔀 Zlúčiť s inou nakladkou</button>
+      <button class="sbtn" style="width:100%;margin-top:6px;background:var(--purple-bg);color:var(--purple);border-color:#9b5ad4" onclick="openMergeModal('${nid}')" data-lang="zlucit">🔀 Zlúčiť s inou nakladkou</button>
     `;
     el.appendChild(card);
   });
@@ -6440,18 +6452,6 @@ window.openFotoLightbox = function(src){
 };
 window.closeFotoLightbox = function(){ document.getElementById('fotoLightbox').classList.remove('show'); };
 
-// ===== JAZYKY =====
-const LANGS = {
-  sk: { spooly:'Spooly',baliky:'Balíky',nakladky:'Nakladky',prehlad:'Prehľad',novyBalik:'Nový balík',novaНakladka:'Nová nakladka',hladaj:'Hľadaj kód napr. 20080 alebo 712-20019...',novy:'Nový',work:'Vo výrobe',done:'Hotový',vyvezene:'Vyvezené',balik:'Balík',nakladka:'Nakladka',datum:'Dátum',sekcia:'Sekcia',izometria:'Izometria',popis:'Popis',stav:'Stav',vytvoril:'Vytvoril',volny:'Voľné',vBaliku:'V balíku',vNakladke:'V nakladke',online:'online',odoslatObalky:'Odoslať obalky',prihlasitSa:'Prihlásiť sa',meno:'MENO',heslo:'HESLO',ulozitZmeny:'Uložiť zmeny',zrusit:'Zrušiť',vytvorit:'Vytvoriť',vyberIzometriu:'Vyber izometriu',hladajIzo:'Hľadaj izometriu...',vsetky:'Všetky',vyberIzoZoznamu:'Vyber izometriu zo zoznamu',skenovanie:'Skenovanie',historiaObalok:'História obalok',hladajIzometriu:'Hľadaj alebo zadaj ručne...',odfotit:'Odfotiť',zoSuboru:'Zo súboru',fotky:'Fotky',odhlasitSa:'Odhlásiť sa' },
-  en: { spooly:'Spools',baliky:'Packages',nakladky:'Shipments',prehlad:'Overview',novyBalik:'New package',novaНakladka:'New shipment',hladaj:'Search code e.g. 20080 or 712-20019...',novy:'New',work:'In production',done:'Done',vyvezene:'Shipped',balik:'Package',nakladka:'Shipment',datum:'Date',sekcia:'Section',izometria:'Isometry',popis:'Description',stav:'Status',vytvoril:'Created by',volny:'Free',vBaliku:'In package',vNakladke:'In shipment',online:'online',odoslatObalky:'Send envelopes',prihlasitSa:'Log in',meno:'NAME',heslo:'PASSWORD',ulozitZmeny:'Save changes',zrusit:'Cancel',vytvorit:'Create',vyberIzometriu:'Select isometry',hladajIzo:'Search isometry...',vsetky:'All',vyberIzoZoznamu:'Select isometry from list',skenovanie:'Scanning',historiaObalok:'Envelope history',hladajIzometriu:'Search or enter manually...',odfotit:'Take photo',zoSuboru:'From file',fotky:'Photos',odhlasitSa:'Log out' },
-  de: { spooly:'Spulen',baliky:'Pakete',nakladky:'Lieferungen',prehlad:'Übersicht',novyBalik:'Neues Paket',novaНakladka:'Neue Lieferung',hladaj:'Code suchen z.B. 20080 oder 712-20019...',novy:'Neu',work:'In Arbeit',done:'Fertig',vyvezene:'Versandt',balik:'Paket',nakladka:'Lieferung',datum:'Datum',sekcia:'Abschnitt',izometria:'Isometrie',popis:'Beschreibung',stav:'Status',vytvoril:'Erstellt von',volny:'Frei',vBaliku:'Im Paket',vNakladke:'In Lieferung',online:'online',odoslatObalky:'Umschläge senden',prihlasitSa:'Anmelden',meno:'NAME',heslo:'PASSWORT',ulozitZmeny:'Speichern',zrusit:'Abbrechen',vytvorit:'Erstellen',vyberIzometriu:'Isometrie wählen',hladajIzo:'Isometrie suchen...',vsetky:'Alle',vyberIzoZoznamu:'Isometrie aus Liste wählen',skenovanie:'Scannen',historiaObalok:'Umschlagverlauf',hladajIzometriu:'Suchen oder manuell eingeben...',odfotit:'Foto aufnehmen',zoSuboru:'Aus Datei',fotky:'Fotos',odhlasitSa:'Abmelden' },
-  uk: { spooly:'Котушки',baliky:'Пакети',nakladky:'Відправлення',prehlad:'Огляд',novyBalik:'Новий пакет',novaНakladka:'Нове відправлення',hladaj:'Пошук коду напр. 20080 або 712-20019...',novy:'Новий',work:'У виробництві',done:'Готово',vyvezene:'Відправлено',balik:'Пакет',nakladka:'Відправлення',datum:'Дата',sekcia:'Секція',izometria:'Ізометрія',popis:'Опис',stav:'Статус',vytvoril:'Створив',volny:'Вільні',vBaliku:'У пакеті',vNakladke:'У відправленні',online:'онлайн',odoslatObalky:'Надіслати конверти',prihlasitSa:'Увійти',meno:'ІМЯ',heslo:'ПАРОЛЬ',ulozitZmeny:'Зберегти',zrusit:'Скасувати',vytvorit:'Створити',vyberIzometriu:'Вибрати ізометрію',hladajIzo:'Пошук ізометрії...',vsetky:'Всі',vyberIzoZoznamu:'Вибрати ізометрію зі списку',skenovanie:'Сканування',historiaObalok:'Історія конвертів',hladajIzometriu:'Пошук або введення вручну...',odfotit:'Сфотографувати',zoSuboru:'З файлу',fotky:'Фото',odhlasitSa:'Вийти' }
-};
-let _lang = localStorage.getItem('isoLang')||'sk';
-window.t = function(key){ return (LANGS[_lang]||LANGS.sk)[key]||key; };
-window.setLang = function(lang){
-  _lang=lang; localStorage.setItem('isoLang',lang); applyLang();
-};
 window.applyLang = function applyLang(){
   document.querySelectorAll('[data-lang]').forEach(el=>{ const k=el.getAttribute('data-lang'); if(k) el.textContent=t(k); });
   const gs=document.getElementById('globalSearch'); if(gs) gs.placeholder=t('hladaj');
@@ -6464,6 +6464,13 @@ window.applyLang = function applyLang(){
   if(typeof renderPrehlad==='function') renderPrehlad();
   if(typeof renderNakladkaGrid==='function') renderNakladkaGrid();
   if(typeof renderBalikGrid==='function') renderBalikGrid();
+  // update placeholders with data-lang-ph
+  document.querySelectorAll('[data-lang-ph]').forEach(el=>{
+    const k=el.getAttribute('data-lang-ph'); if(k) el.placeholder=t(k);
+  });
+  // update add SP button
+  const addSpBtn=document.getElementById('addSpBtn');
+  if(addSpBtn) addSpBtn.textContent='+ '+t('pridatSP').replace('+ ','');
 };
 
 window.scanSearchFilter = function(q){
