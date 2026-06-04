@@ -6433,6 +6433,49 @@ window.openFotoLightbox = function(src){
 };
 window.closeFotoLightbox = function(){ document.getElementById('fotoLightbox').classList.remove('show'); };
 
+window.scanSearchFilter = function(q){
+  const drop = document.getElementById('scanSearchDrop');
+  if(!q||q.length<2){ drop.classList.remove('open'); return; }
+  const ql = q.toLowerCase().replace(/\s/g,'');
+  const res=[];
+  SECTIONS.forEach(sec=>{
+    (ISOMETRIES_DATA[sec]||[]).forEach(iso=>{
+      if(iso.toLowerCase().replace(/\s/g,'').includes(ql)) res.push({sec,iso});
+    });
+  });
+  drop.innerHTML='';
+  if(!res.length){
+    drop.innerHTML='<div style="padding:10px 14px;font-size:12px;color:var(--text3)">Nič sa nenašlo</div>';
+    drop.classList.add('open'); return;
+  }
+  const header=document.createElement('div');
+  header.style.cssText='padding:6px 12px;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border);display:flex;justify-content:space-between';
+  header.innerHTML='<span>Výsledky</span><span><strong>'+res.length+'</strong> nájdených</span>';
+  drop.appendChild(header);
+  res.slice(0,30).forEach(({sec,iso})=>{
+    const qlReg=new RegExp('('+ql.replace(/[-]/g,'\\-')+')', 'gi');
+    const highlighted=iso.replace(qlReg,'<mark style="background:#fff3b0;border-radius:2px">$1</mark>');
+    const item=document.createElement('div');
+    item.className='srd-item';
+    item.style.cssText='padding:8px 12px;cursor:pointer;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border)';
+    item.innerHTML='<span class="srd-sec">'+sec+'</span><span style="font-size:12px;flex:1">'+highlighted+'</span>';
+    item.onmousedown=(e)=>{
+      e.preventDefault();
+      addScanIso(iso);
+      document.getElementById('scanManualInp').value='';
+      drop.classList.remove('open');
+    };
+    drop.appendChild(item);
+  });
+  if(res.length>30){
+    const more=document.createElement('div');
+    more.style.cssText='padding:7px 12px;font-size:11px;color:var(--text3);text-align:center';
+    more.textContent='+ '+(res.length-30)+' ďalších — upresni hľadanie';
+    drop.appendChild(more);
+  }
+  drop.classList.add('open');
+};
+
 </script>
 
 <!-- MODAL: Upraviť nakladku --><!-- MODAL: Upraviť nakladku -->
