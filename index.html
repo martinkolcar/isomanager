@@ -2688,11 +2688,11 @@ tr:hover td{background:var(--surface2)}
       <div class="search-drop" id="searchDrop"></div>
     </div>
     <div class="spacer"></div>
-    <button class="btn btn-amber" onclick="openBalikModal()">📦 <span class="btn-text">Nový balík</span></button>
-    <button class="btn btn-purple" onclick="openNakladkaModal()">🚛 <span class="btn-text">Nová nakladka</span></button>
+    <button class="btn btn-amber" onclick="openBalikModal()">📦 <span class="btn-text" data-lang="novyBalik">Nový balík</span></button>
+    <button class="btn btn-purple" onclick="openNakladkaModal()">🚛 <span class="btn-text" data-lang="novaНakladka">Nová nakladka</span></button>
     <div style="display:flex;align-items:center;gap:8px;margin-left:8px;flex-shrink:0">
       <span id="userNameDisplay" style="font-size:11px;color:var(--text2);font-family:monospace;white-space:nowrap"></span>
-      <button onclick="openScannerModal()" style="background:var(--surface2);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px;color:var(--text)">📋 Odoslať obalky</button>
+      <button onclick="openScannerModal()" style="background:var(--surface2);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px;color:var(--text)">📋 <span data-lang="odoslatObalky">Odoslať obalky</span></button>
       <div style="display:inline-flex;align-items:center;gap:1px;background:var(--surface2);border-radius:6px;padding:3px 4px">
         <button id="langBtn_sk" onclick="setLang('sk')" style="background:none;border:none;cursor:pointer;font-size:15px;padding:1px 3px;border-radius:4px" title="Slovenčina">🇸🇰</button>
         <button id="langBtn_en" onclick="setLang('en')" style="background:none;border:none;cursor:pointer;font-size:15px;padding:1px 3px;border-radius:4px" title="English">🇬🇧</button>
@@ -2710,10 +2710,10 @@ tr:hover td{background:var(--surface2)}
 
   <!-- NAV TABS -->
   <div class="nav-tabs">
-    <div class="nav-tab active" onclick="showPage('spooly')">📐 Spooly</div>
-    <div class="nav-tab" onclick="showPage('baliky')">📦 Balíky</div>
-    <div class="nav-tab" onclick="showPage('nakladky')">🚛 Nakladky</div>
-    <div class="nav-tab" onclick="showPage('prehlad')">📊 Prehľad</div>
+    <div class="nav-tab active" onclick="showPage('spooly')">📐 <span data-lang="spooly">Spooly</span></div>
+    <div class="nav-tab" onclick="showPage('baliky')">📦 <span data-lang="baliky">Balíky</span></div>
+    <div class="nav-tab" onclick="showPage('nakladky')">🚛 <span data-lang="nakladky">Nakladky</span></div>
+    <div class="nav-tab" onclick="showPage('prehlad')">📊 <span data-lang="prehlad">Prehľad</span></div>
   </div>
 
   <!-- PAGE: SPOOLY -->
@@ -2730,7 +2730,7 @@ tr:hover td{background:var(--surface2)}
       <div class="sb-head">
         <input class="sb-inp" id="sbSearch" placeholder="Hľadaj izometriu..." oninput="filterSb(this.value)" />
         <select class="sb-inp" id="sbFilter" onchange="filterSb(document.getElementById('sbSearch').value)">
-          <option value="all">Všetky</option>
+          <option value="all" data-lang="vsetky">Všetky</option>
           <option value="no-sp">Bez spoolu</option>
           <option value="has-sp">Má spool</option>
         </select>
@@ -2753,9 +2753,9 @@ tr:hover td{background:var(--surface2)}
   <!-- PAGE: BALIKY -->
   <div class="page" id="page-baliky" style="flex-direction:column;overflow:hidden">
     <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-shrink:0">
-      <span style="font-weight:600;font-size:13px">📦 Balíky spoolov</span>
+      <span style="font-weight:600;font-size:13px">📦 <span data-lang="baliky">Balíky spoolov</span></span>
       <div class="spacer"></div>
-      <button class="btn btn-amber" onclick="openBalikModal()">＋ Nový balík</button>
+      <button class="btn btn-amber" onclick="openBalikModal()">＋ <span data-lang="novyBalik">Nový balík</span></button>
     </div>
     <div class="balik-grid" id="balikGrid">
       <div class="empty"><div class="empty-ico">📦</div><div>Zatiaľ žiadne balíky</div></div>
@@ -2765,9 +2765,9 @@ tr:hover td{background:var(--surface2)}
   <!-- PAGE: NAKLADKY -->
   <div class="page" id="page-nakladky" style="flex-direction:column;overflow:hidden">
     <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-shrink:0">
-      <span style="font-weight:600;font-size:13px">🚛 Nakladky na kamión</span>
+      <span style="font-weight:600;font-size:13px">🚛 <span data-lang="nakladky">Nakladky na kamión</span></span>
       <div class="spacer"></div>
-      <button class="btn btn-purple" onclick="openNakladkaModal()">＋ Nová nakladka</button>
+      <button class="btn btn-purple" onclick="openNakladkaModal()">＋ <span data-lang="novaНakladka">Nová nakladka</span></button>
     </div>
     <div class="nakladka-grid" id="nakladkaGrid">
       <div class="empty"><div class="empty-ico">🚛</div><div>Zatiaľ žiadne nakladky</div></div>
@@ -2777,7 +2777,7 @@ tr:hover td{background:var(--surface2)}
   <!-- PAGE: PREHLAD -->
   <div class="page" id="page-prehlad" style="flex-direction:column;overflow:hidden">
     <div class="prehladbar">
-      <span style="font-weight:600;font-size:13px">📊 Prehľad všetkých spoolov</span>
+      <span style="font-weight:600;font-size:13px">📊 <span data-lang="prehlad">Prehľad všetkých spoolov</span></span>
       <div class="spacer"></div>
       <button class="filter-chip active" onclick="setPrehladFilter('all',this)">Všetky</button>
       <button class="filter-chip" onclick="setPrehladFilter('volny',this)" data-lang="volny">Voľné</button>
@@ -2786,9 +2786,9 @@ tr:hover td{background:var(--surface2)}
       <button class="filter-chip" onclick="setPrehladFilter('vyvezene',this)" data-lang="vyvezene">Vyvezené</button>
       <input class="sb-inp" style="width:140px" placeholder="Hľadaj..." oninput="prehladSearch=this.value;renderPrehlad()" />
       <select class="sb-inp" style="width:110px" id="filterPed" onchange="renderPrehlad()"><option value="">PED (všetky)</option></select>
-      <select class="sb-inp" style="width:120px" id="filterBalik" onchange="renderPrehlad()"><option value="">Balík (všetky)</option></select>
-      <select class="sb-inp" style="width:130px" id="filterNakladka" onchange="renderPrehlad()"><option value="">Nakladka (všetky)</option></select>
-      <select class="sb-inp" style="width:120px" id="filterDatum" onchange="renderPrehlad()"><option value="">Dátum (všetky)</option></select>
+      <select class="sb-inp" style="width:120px" id="filterBalik" onchange="renderPrehlad()"><option value="" data-lang-opt="balik_vsetky">Balík (všetky)</option></select>
+      <select class="sb-inp" style="width:130px" id="filterNakladka" onchange="renderPrehlad()"><option value="" data-lang-opt="nakladka_vsetky">Nakladka (všetky)</option></select>
+      <select class="sb-inp" style="width:120px" id="filterDatum" onchange="renderPrehlad()"><option value="" data-lang-opt="datum_vsetky">Dátum (všetky)</option></select>
       <button class="btn btn-green" onclick="exportPrehladExcel()">📊 Excel</button>
       <button class="btn btn-red" onclick="cleanUndefinedSpools()" title="Zmaže všetky spooly bez čísla">🧹 Vyčistiť</button>
     </div>
@@ -2850,7 +2850,7 @@ tr:hover td{background:var(--surface2)}
 <!-- MODAL: Nová nakladka -->
 <div class="modal-bg" id="nakladkaModal">
   <div class="modal">
-    <h3>🚛 Nová nakladka</h3>
+    <h3>🚛 <span data-lang="novaНakladka">Nová nakladka</span></h3>
     <div class="m-row">
       <div style="flex:1"><label class="m-label">Názov / číslo nakladky *</label><input class="m-inp" id="nakName" placeholder="napr. NK-01" /></div>
       <div style="flex:1"><label class="m-label">Dátum odvozu</label><input class="m-inp" type="date" id="nakDate" /></div>
@@ -2875,7 +2875,7 @@ tr:hover td{background:var(--surface2)}
     <button class="btn" onclick="addMatRow('nakMatList')" style="width:100%;justify-content:center;margin-bottom:4px">＋ Pridať materiál</button>
     <div class="m-foot">
       <button class="btn" onclick="closeModal('nakladkaModal')">Zrušiť</button>
-      <button class="btn btn-purple" onclick="saveNakladka()">Vytvoriť nakladku</button>
+      <button class="btn btn-purple" onclick="saveNakladka()"><span data-lang="vytvorit">Vytvoriť</span> nakladku</button>
     </div>
   </div>
 </div>
@@ -4739,9 +4739,9 @@ function renderSpoolTable(){
   } else {
     const tbl=document.createElement('table');
     tbl.innerHTML=`<thead><tr>
-      <th>SP</th><th>Popis</th><th>Stav</th>
-      <th title="Vyvezené z haly">✅ Vyv.</th>
-      <th>Balík</th><th>Nakladka</th><th>Pozn.</th><th></th>
+      <th>SP</th><th data-lang="popis">Popis</th><th data-lang="stav">Stav</th>
+      <th title="Vyvezené z haly">✅ <span data-lang="vyvezene">Vyv.</span></th>
+      <th data-lang="balik">Balík</th><th data-lang="nakladka">Nakladka</th><th>Pozn.</th><th></th>
     </tr></thead>`;
     const tb=document.createElement('tbody');
     items.forEach(([sid,sp])=>{
@@ -4775,7 +4775,7 @@ function renderSpoolTable(){
   ar.innerHTML=`
     <span style="font-size:11px;color:var(--text2);width:100%;display:block;margin-bottom:4px">Pridať SP:</span>
     <input class="add-inp" id="newSpNum" placeholder="Číslo SP" style="width:90px" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
-    <input class="add-inp" id="newSpDesc" placeholder="Popis (voliteľné)" style="flex:1;min-width:80px" autocomplete="off" autocorrect="off" spellcheck="false" />
+    <input class="add-inp" id="newSpDesc" placeholder="Popis (voliteľné)" data-lang-ph="popisVolitelny" style="flex:1;min-width:80px" autocomplete="off" autocorrect="off" spellcheck="false" />
     <select class="add-inp" id="newSpSt" style="width:105px">
       <option value="new">Nový</option><option value="work">Vo výrobe</option><option value="done">Hotový</option>
     </select>
@@ -5246,10 +5246,10 @@ function populatePrehladFilters(all){
   const naks = [...new Set(all.map(sp=>{const n=_getNak(sp);return n?n.name:''}).filter(Boolean))].sort();
   const dats = [...new Set(all.map(sp=>{const n=_getNak(sp);return n?n.date:''}).filter(Boolean))].sort().reverse();
 
-  pedEl.innerHTML = '<option value="">PED (všetky)</option>' + peds.map(v=>`<option value="${v}"${v===pedVal?' selected':''}>${v}</option>`).join('');
-  balikEl.innerHTML = '<option value="">Balík (všetky)</option>' + baliks.map(v=>`<option value="${v}"${v===balikVal?' selected':''}>${v}</option>`).join('');
-  nakEl.innerHTML = '<option value="">Nakladka (všetky)</option>' + naks.map(v=>`<option value="${v}"${v===nakVal?' selected':''}>${v}</option>`).join('');
-  datEl.innerHTML = '<option value="">Dátum (všetky)</option>' + dats.map(v=>`<option value="${v}"${v===datVal?' selected':''}>${v}</option>`).join('');
+  pedEl.innerHTML = `<option value="">${t('stav')||'PED'} (${t('vsetky')})</option>` + peds.map(v=>`<option value="${v}"${v===pedVal?' selected':''}>${v}</option>`).join('');
+  balikEl.innerHTML = `<option value="">${t('balik')} (${t('vsetky')})</option>` + baliks.map(v=>`<option value="${v}"${v===balikVal?' selected':''}>${v}</option>`).join('');
+  nakEl.innerHTML = `<option value="">${t('nakladka')} (${t('vsetky')})</option>` + naks.map(v=>`<option value="${v}"${v===nakVal?' selected':''}>${v}</option>`).join('');
+  datEl.innerHTML = `<option value="">${t('datum')} (${t('vsetky')})</option>` + dats.map(v=>`<option value="${v}"${v===datVal?' selected':''}>${v}</option>`).join('');
 }
 
 function renderPrehlad(){
@@ -5287,8 +5287,8 @@ function renderPrehlad(){
   const stC={new:'st-new',work:'st-work',done:'st-done'};
   el.innerHTML=`<table>
     <thead><tr>
-      <th>Sekcia</th><th>Izometria</th><th>PED</th><th>SP</th><th>Popis</th><th>Stav</th>
-      <th>Vyvezené</th><th>Balík</th><th>Vytvoril</th><th>Nakladka</th><th>Dátum</th>
+      <th>${t('sekcia')}</th><th>${t('izometria')}</th><th>PED</th><th>SP</th><th>${t('popis')}</th><th>${t('stav')}</th>
+      <th>${t('vyvezene')}</th><th>${t('balik')}</th><th>${t('vytvoril')}</th><th>${t('nakladka')}</th><th>${t('datum')}</th>
     </tr></thead>
     <tbody>${rows.map(sp=>{
       const bName=sp.balikId&&baliky[sp.balikId]?`<span class="pkg-chip">${baliky[sp.balikId].name}</span>`:'—';
@@ -5323,7 +5323,7 @@ function exportPrehladExcel(){
   const all=getAllSpools();
   const rows=all.map(sp=>({
     Sekcia:sp.sec, Izometria:sp.iso, PED:(typeof PED_DATA!=="undefined"&&PED_DATA[sp.sec]&&PED_DATA[sp.sec][sp.iso])||'', Spool:'SP-'+sp.num, Popis:sp.desc||'',
-    Stav:{new:'Nový',work:'Vo výrobe',done:'Hotový'}[sp.status]||'Nový',
+    Stav:{new:t('novy'),work:t('work'),done:t('done')}[sp.status]||'Nový',
     Vyvezene:sp.vyvezene?'ÁNO':'NIE',
     VyvezeneKto:sp.vyvezeneKto||'',
     VyvezeneKedy:sp.vyvezeneKedy||'',
@@ -6052,7 +6052,7 @@ function showNakladkaDetail(nid){
 
   // baliky section
   if((nk.balikIds||[]).length){
-    html += '<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px" data-lang="baliky">Balíky</div>';
+    html += '<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px" data-lang="baliky" data-lang="baliky">Balíky</div>';
     html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">';
     (nk.balikIds||[]).forEach(bid=>{
       const bk=baliky[bid];
