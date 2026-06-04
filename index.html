@@ -4786,10 +4786,10 @@ function renderSpoolTable(){
   const ar=document.createElement('div'); ar.className='add-row';
   ar.innerHTML=`
     <span style="font-size:11px;color:var(--text2);width:100%;display:block;margin-bottom:4px">${t('pridatSP')}:</span>
-    <input class="add-inp" id="newSpNum" placeholder="Číslo SP" data-lang-ph="cisloSP" style="width:90px" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
-    <input class="add-inp" id="newSpDesc" placeholder="Popis (voliteľné)" data-lang-ph="popisVolitelny" data-lang-ph="popisVolitelny" style="flex:1;min-width:80px" autocomplete="off" autocorrect="off" spellcheck="false" />
+    <input class="add-inp" id="newSpNum" placeholder="${t('cisloSP')}" style="width:90px" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+    <input class="add-inp" id="newSpDesc" placeholder="${t('popisVolitelny')}" style="flex:1;min-width:80px" autocomplete="off" autocorrect="off" spellcheck="false" />
     <select class="add-inp" id="newSpSt" style="width:105px">
-      <option value="new" data-lang="novy">Nový</option><option value="work" data-lang="work">Vo výrobe</option><option value="done" data-lang="done">Hotový</option>
+      <option value="new">${t('novy')}</option><option value="work">${t('work')}</option><option value="done">${t('done')}</option>
     </select>
     <button class="btn btn-blue" style="width:100%;justify-content:center;margin-top:4px" onclick="addSpool()" id="addSpBtn">＋ ${t('pridatSP')}</button>`;
   wrap.appendChild(tw); wrap.appendChild(ar);
@@ -5213,7 +5213,7 @@ function renderNakladkaGrid(){
         <button class="sbtn" onclick="exportNakladkaExcel('${nid}')">📊 Excel</button>
         <button class="sbtn del" onclick="deleteNakladka('${nid}')">🗑</button>
       </div>
-      <button class="sbtn" style="width:100%;margin-top:6px;background:var(--purple-bg);color:var(--purple);border-color:#9b5ad4" onclick="openMergeModal('${nid}')" data-lang="zlucit">🔀 Zlúčiť s inou nakladkou</button>
+      <button class="sbtn" style="width:100%;margin-top:6px;background:var(--purple-bg);color:var(--purple);border-color:#9b5ad4" onclick="openMergeModal('${nid}')">🔀 ${t('zlucit')}</button>
     `;
     el.appendChild(card);
   });
