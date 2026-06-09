@@ -6463,6 +6463,45 @@ window.openFotoLightbox = function(src){
 };
 window.closeFotoLightbox = function(){ document.getElementById('fotoLightbox').classList.remove('show'); };
 
+// ===== FOTKY V EDIT NAKLADKA =====
+function renderEnkFotoGrid(nid){
+  const el=document.getElementById('enkFotoGrid'); if(!el) return;
+  const nk=nakladky[nid]||{};
+  const fotos=nk.fotos||[];
+  if(!fotos.length){ el.innerHTML='<div style="color:var(--text3);font-size:11px">Žiadne fotky</div>'; return; }
+  el.innerHTML=fotos.map((f,i)=>`<div style="position:relative"><img class="foto-thumb" src="${f.data}" onclick="openFotoLightbox('${f.data}')" /><button onclick="deleteFotoEdit('${nid}',${i})" style="position:absolute;top:-4px;right:-4px;background:#e57373;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;color:#fff">✕</button></div>`).join('');
+}
+
+window.addFotoFromCameraEdit = function(){
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='image/*'; inp.capture='environment';
+  inp.onchange=async function(){ if(inp.files[0]){ const data=await fileToBase64(inp.files[0]); saveFotoEdit(data); } };
+  inp.click();
+};
+
+window.addFotoFromFileEdit = function(){
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='image/*'; inp.multiple=true;
+  inp.onchange=async function(){ for(const file of inp.files){ const data=await fileToBase64(file); saveFotoEdit(data); } };
+  inp.click();
+};
+
+function saveFotoEdit(data){
+  if(!editNakId) return;
+  const nk=nakladky[editNakId]||{};
+  const fotos=[...(nk.fotos||[]),{data,ts:Date.now()}];
+  db.ref('nakladky/'+editNakId+'/fotos').set(fotos);
+  setTimeout(()=>renderEnkFotoGrid(editNakId),500);
+}
+
+window.deleteFotoEdit = function(nid,idx){
+  if(!confirm('Zmazať fotku?')) return;
+  const nk=nakladky[nid]||{};
+  const fotos=(nk.fotos||[]).filter((_,i)=>i!==idx);
+  db.ref('nakladky/'+nid+'/fotos').set(fotos);
+  setTimeout(()=>renderEnkFotoGrid(nid),400);
+};
+
 window.applyLang = function applyLang(){
   document.querySelectorAll('[data-lang]').forEach(el=>{ const k=el.getAttribute('data-lang'); if(k) el.textContent=t(k); });
   const gs=document.getElementById('globalSearch'); if(gs) gs.placeholder=t('hladaj');
