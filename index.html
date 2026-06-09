@@ -5414,31 +5414,6 @@ function exportNakladkaPdf(nid){
       headStyles:{fillColor:[122,74,8],textColor:255,fontStyle:'bold'},
     });
   }
-  // Fotky - 6 na stranku (2 stlpce x 3 riadky)
-  const fotos = nk.fotos||[];
-  if(fotos.length){
-    const cols=2, rows=3, perPage=cols*rows;
-    const pageW=297, pageH=210, margin=10;
-    const cellW=(pageW-margin*(cols+1))/cols;
-    const cellH=(pageH-margin*(rows+1)-15)/rows;
-    for(let i=0;i<fotos.length;i+=perPage){
-      doc.addPage();
-      doc.setFontSize(9); doc.setTextColor(100);
-      doc.text(sk(nk.name)+' — Fotky ('+(i+1)+'-'+Math.min(i+perPage,fotos.length)+' z '+fotos.length+')', margin, 8);
-      for(let j=0;j<perPage&&i+j<fotos.length;j++){
-        const col=j%cols, row=Math.floor(j/cols);
-        const x=margin+(cellW+margin)*col;
-        const y=12+(cellH+margin)*row;
-        try{
-          const img=new Image(); img.src=fotos[i+j].data;
-          const ratio=Math.min(cellW/img.naturalWidth,cellH/img.naturalHeight);
-          const w=img.naturalWidth*ratio, h=img.naturalHeight*ratio;
-          const ox=(cellW-w)/2, oy=(cellH-h)/2;
-          doc.addImage(fotos[i+j].data,'JPEG',x+ox,y+oy,w,h);
-        }catch(e){}
-      }
-    }
-  }
   doc.save('Dodaci_list_'+nk.name.replace(/[^a-zA-Z0-9]/g,'_')+'_'+today()+'.pdf');
 }
 
@@ -6463,22 +6438,28 @@ function fileToBase64(file){
   return new Promise(res=>{
     const reader=new FileReader();
     reader.onload=e=>{
-      // Zmenši obrázok pred uložením
-      const img=new Image();
-      img.onload=()=>{
-        const MAX=1200;
-        let w=img.width, h=img.height;
-        if(w>MAX||h>MAX){
-          if(w>h){ h=Math.round(h*MAX/w); w=MAX; }
-          else { w=Math.round(w*MAX/h); h=MAX; }
-        }
-        const canvas=document.createElement('canvas');
-        canvas.width=w; canvas.height=h;
-        canvas.getContext('2d').drawImage(img,0,0,w,h);
-        res(canvas.toDataURL('image/jpeg',0.7)); // 70% kvalita
-      };
-      img.src=e.target.result;
+      const rawData=e.target.result;
+      try {
+        const img=new Image();
+        img.onload=()=>{
+          try {
+            const MAX=1200;
+            let w=img.width, h=img.height;
+            if(w>MAX||h>MAX){
+              if(w>h){h=Math.round(h*MAX/w);w=MAX;}
+              else{w=Math.round(w*MAX/h);h=MAX;}
+            }
+            const canvas=document.createElement('canvas');
+            canvas.width=w; canvas.height=h;
+            canvas.getContext('2d').drawImage(img,0,0,w,h);
+            res(canvas.toDataURL('image/jpeg',0.7));
+          } catch(e2){ res(rawData); }
+        };
+        img.onerror=()=>res(rawData);
+        img.src=rawData;
+      } catch(e){ res(rawData); }
     };
+    reader.onerror=()=>res(null);
     reader.readAsDataURL(file);
   });
 }
@@ -6531,12 +6512,8 @@ function saveFotoEdit(data){
   if(!editNakId) return;
   const nk=nakladky[editNakId]||{};
   const fotos=[...(nk.fotos||[]),{data,ts:Date.now()}];
-  db.ref('nakladky/'+editNakId+'/fotos').set(fotos).then(()=>{
-    // Aktualizuj lokálnu cache a rerenderuj
-    if(!nakladky[editNakId]) nakladky[editNakId]={};
-    nakladky[editNakId].fotos = fotos;
-    renderEnkFotoGrid(editNakId);
-  });
+  db.ref('nakladky/'+editNakId+'/fotos').set(fotos);
+  setTimeout(()=>renderEnkFotoGrid(editNakId),500);
 }
 
 window.deleteFotoEdit = function(nid,idx){
