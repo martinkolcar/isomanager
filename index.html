@@ -41,7 +41,16 @@ onAuthStateChanged(_auth, (user) => {
     }
     if(typeof initApp === 'function') initApp();
     setTimeout(window._startLogListener, 1000);
-    setTimeout(window.applyLang, 600);
+    // Načítaj jazyk z Firebase
+    if(window.DB && window._currentUser){
+      window.DBOn('userSettings/'+window._currentUser.uid+'/lang', snap=>{
+        const lang = snap.val();
+        if(lang && LANGS[lang]){ window._lang=lang; }
+        if(typeof window.applyLang==='function') setTimeout(window.applyLang, 300);
+      });
+    } else {
+      setTimeout(window.applyLang, 600);
+    }
     // Session enforcement - one device at a time (nie pre admina)
     if(user.email !== 'martinkolcar@iso.sk'){
       const sessionId = Math.random().toString(36).slice(2)+Date.now();
@@ -70,9 +79,16 @@ const LANGS = {
   de: { spooly:'Spulen',baliky:'Pakete',nakladky:'Lieferungen',prehlad:'Übersicht',novyBalik:'Neues Paket',novaНakladka:'Neue Lieferung',hladaj:'Code suchen z.B. 20080 oder 712-20019...',novy:'Neu',work:'In Arbeit',done:'Fertig',vyvezene:'Versandt',balik:'Paket',nakladka:'Lieferung',datum:'Datum',sekcia:'Abschnitt',izometria:'Isometrie',popis:'Beschreibung',stav:'Status',vytvoril:'Erstellt von',volny:'Frei',vBaliku:'Im Paket',vNakladke:'In Lieferung',online:'online',odoslatObalky:'Umschläge senden',prihlasitSa:'Anmelden',meno:'NAME',heslo:'Passwort',ulozitZmeny:'Speichern',zrusit:'Abbrechen',vytvorit:'Erstellen',vyberIzometriu:'Isometrie wählen',hladajIzo:'Isometrie suchen...',vsetky:'Alle',vyberIzoZoznamu:'Isometrie aus Liste wählen',skenovanie:'Scannen',historiaObalok:'Umschlagverlauf',hladajIzometriu:'Suchen oder manuell eingeben...',odfotit:'Foto aufnehmen',zoSuboru:'Aus Datei',fotky:'Fotos',odhlasitSa:'Abmelden',spoolov:'Spulen',balov:'Pak.',matov:'Mat.',pridatSP:'SP hinzufügen',cisloSP:'SP-Nummer',popisVolitelny:'Beschreibung (optional)',poznamka:'Notiz',baliky_nadpis:'PAKETE',spooly_nadpis:'SPULEN',volnyMaterial:'FREIES MATERIAL',sekcia_nadpis:'ABSCHNITT',balik_nadpis:'PAKET',izometria_nadpis:'ISOMETRIE',zlucit:'Mit anderer Lieferung zusammenführen',spoolov_label:'Spulen' ,logPridatSpool:'Spule hinzugefügt',logUpravilSpool:'Spule bearbeitet',logZmazalSpool:'Spule gelöscht',logVytvorilBalik:'Paket erstellt',logZmazalBalik:'Paket gelöscht',logVytvorilNakladku:'Lieferung erstellt',logArrow:'→'},
   uk: { spooly:'Котушки',baliky:'Пакети',nakladky:'Відправлення',prehlad:'Огляд',novyBalik:'Новий пакет',novaНakladka:'Нове відправлення',hladaj:'Пошук коду напр. 20080 або 712-20019...',novy:'Новий',work:'У виробництві',done:'Готово',vyvezene:'Відправлено',balik:'Пакет',nakladka:'Відправлення',datum:'Дата',sekcia:'Секція',izometria:'Ізометрія',popis:'Опис',stav:'Статус',vytvoril:'Створив',volny:'Вільні',vBaliku:'У пакеті',vNakladke:'У відправленні',online:'онлайн',odoslatObalky:'Надіслати конверти',prihlasitSa:'Увійти',meno:'ІМЯ',heslo:'ПАРОЛЬ',ulozitZmeny:'Зберегти',zrusit:'Скасувати',vytvorit:'Створити',vyberIzometriu:'Вибрати ізометрію',hladajIzo:'Пошук ізометрії...',vsetky:'Всі',vyberIzoZoznamu:'Вибрати ізометрію зі списку',skenovanie:'Сканування',historiaObalok:'Історія конвертів',hladajIzometriu:'Пошук або введення вручну...',odfotit:'Сфотографувати',zoSuboru:'З файлу',fotky:'Фото',odhlasitSa:'Вийти',spoolov:'котушок',balov:'пак.',matov:'мат.',pridatSP:'Додати SP',cisloSP:'Номер SP',popisVolitelny:'Опис (необов\'язково)',poznamka:'Примітка',baliky_nadpis:'ПАКЕТИ',spooly_nadpis:'КОТУШКИ',volnyMaterial:'ВІЛЬНИЙ МАТЕРІАЛ',sekcia_nadpis:'СЕКЦІЯ',balik_nadpis:'ПАКЕТ',izometria_nadpis:'ІЗОМЕТРІЯ',zlucit:'Об\'єднати з іншим відправленням',spoolov_label:'котушок' ,logPridatSpool:'Додав котушку',logUpravilSpool:'Редагував котушку',logZmazalSpool:'Видалив котушку',logVytvorilBalik:'Створив пакет',logZmazalBalik:'Видалив пакет',logVytvorilNakladku:'Створив відправлення',logArrow:'→'}
 };
-let _lang = localStorage.getItem('isoLang')||'sk';
-window.t = function(key){ return (LANGS[_lang]||LANGS.sk)[key]||key; };
-window.setLang = function(lang){ _lang=lang; localStorage.setItem('isoLang',lang); if(typeof window.applyLang==='function') window.applyLang(); };
+var _lang = 'sk';
+window._lang = _lang;
+window.t = function(key){ return (LANGS[window._lang]||LANGS.sk)[key]||key; };
+window.setLang = function(lang){
+  window._lang=lang;
+  if(typeof window.applyLang==='function') window.applyLang();
+  // Ulož do Firebase
+  const u = window._currentUser;
+  if(u && window.DB) window.DBSet('userSettings/'+u.uid+'/lang', lang);
+};
 
 
 // ===== ACTIVITY LOG =====
@@ -6469,7 +6485,7 @@ window.applyLang = function applyLang(){
   const sbi=document.getElementById('sbSearch'); if(sbi) sbi.placeholder=t('hladajIzo');
   const sbf=document.getElementById('sbFilter'); if(sbf&&sbf.options[0]) sbf.options[0].text=t('vsetky');
   const emp=document.getElementById('isoEmptyState'); if(emp) emp.textContent=t('vyberIzoZoznamu');
-  ['sk','en','de','uk'].forEach(l=>{ const b=document.getElementById('langBtn_'+l); if(b){b.style.fontWeight=l===_lang?'900':'400';b.style.opacity=l===_lang?'1':'0.5';} });
+  ['sk','en','de','uk'].forEach(l=>{ const b=document.getElementById('langBtn_'+l); if(b){b.style.fontWeight=l===window._lang?'900':'400';b.style.opacity=l===window._lang?'1':'0.5';} });
   if(typeof renderSb==='function') renderSb();
   if(typeof renderPrehlad==='function') renderPrehlad();
   if(typeof renderNakladkaGrid==='function') renderNakladkaGrid();
