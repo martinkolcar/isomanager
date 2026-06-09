@@ -6212,8 +6212,7 @@ initAvPick();
 })();
 
 // ===== SCANNER =====
-var _isoScanStream = null, _isoScanWorker = null, _isoScannedIso = null;
-var _scanList = [], _scanResult = null;
+var _scanStream = null, _scanWorker = null, _scanResult = null, _scanList = [];
 
 window.setScanTab = function(tab){
   document.getElementById('scanTabScan').style.display = tab==='scan'?'block':'none';
@@ -6230,146 +6229,304 @@ window.openScannerModal = function(){
   document.getElementById('scannerModal').style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9990;align-items:center;justify-content:center';
 };
 window.closeScannerModal = function(){
-  closeIsoScanner();
+  window.closeScanOverlay();
   document.getElementById('scannerModal').style.display='none';
 };
 
-window.openIsoScanner = async function(){
-  var ov = document.getElementById('isoScanOverlay');
+window.openScanOverlay = async function(){
+  const ov = document.getElementById('scanOverlay');
   ov.classList.add('show');
-  document.getElementById('isoResultPanel').style.display='none';
-  document.getElementById('isoProcessing').style.display='none';
-  document.getElementById('isoCaptureBtn').style.display='block';
-  document.getElementById('isoCaptureBtn').textContent='📷 Skenuj';
+  document.getElementById('scanResultPanel').style.display='none';
+  document.getElementById('scanProcessing').style.display='none';
+  document.getElementById('scanCaptureBtn').style.display='block';
+  document.getElementById('scanCaptureBtn').textContent='📷 Skenuj';
   try {
-    _isoScanStream = await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}
-    });
-    document.getElementById('isoScanVideo').srcObject = _isoScanStream;
-    if(!_isoScanWorker) _isoScanWorker = await Tesseract.createWorker('eng');
-  } catch(e) {
-    alert('Kamera: '+e.message);
-    closeIsoScanner();
-  }
+    _scanStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
+    document.getElementById('isoScanVideo').srcObject = _scanStream;
+    if(!_scanWorker) _scanWorker = await Tesseract.createWorker('eng');
+  } catch(e){ alert('Kamera: '+e.message); window.closeScanOverlay(); }
 };
 
-window.closeIsoScanner = function(){
-  if(_isoScanStream){_isoScanStream.getTracks().forEach(t=>t.stop());_isoScanStream=null;}
-  const v=document.getElementById('isoScanVideo');
+window.closeScanOverlay = function(){
+  if(_scanStream){ _scanStream.getTracks().forEach(t=>t.stop()); _scanStream=null; }
+  const v = document.getElementById('isoScanVideo');
   if(v) v.srcObject=null;
-  const ov=document.getElementById('isoScanOverlay');
+  const ov = document.getElementById('scanOverlay');
   if(ov) ov.classList.remove('show');
 };
 
-window.isoCapture = async function(){
-  const video=document.getElementById('isoScanVideo');
-  const box=document.getElementById('isoScanBox');
-  if(!video.videoWidth){alert('Kamera nie je pripravená');return;}
-  document.getElementById('isoCaptureBtn').textContent='⏳';
-  document.getElementById('isoProcessing').style.display='block';
-  document.getElementById('isoResultPanel').style.display='none';
-  const vRect=video.getBoundingClientRect(),bRect=box.getBoundingClientRect();
-  const vw=video.videoWidth,vh=video.videoHeight;
+window.captureIso = async function(){
+  const video = document.getElementById('isoScanVideo');
+  const box = document.getElementById('isoScanBox');
+  if(!video.videoWidth){ alert('Kamera nie je pripravená'); return; }
+  document.getElementById('scanCaptureBtn').textContent='⏳';
+  document.getElementById('scanProcessing').style.display='block';
+  document.getElementById('scanResultPanel').style.display='none';
+  const vRect=video.getBoundingClientRect(), bRect=box.getBoundingClientRect();
+  const vw=video.videoWidth, vh=video.videoHeight;
   const scale=Math.min(vRect.width/vw,vRect.height/vh);
-  const rendW=vw*scale,rendH=vh*scale;
-  const ox=(vRect.width-rendW)/2,oy=(vRect.height-rendH)/2;
+  const rendW=vw*scale, rendH=vh*scale;
+  const ox=(vRect.width-rendW)/2, oy=(vRect.height-rendH)/2;
   const sx=Math.max(0,(bRect.left-vRect.left-ox)/scale);
   const sy=Math.max(0,(bRect.top-vRect.top-oy)/scale);
   const sw=Math.min(vw-sx,bRect.width/scale);
   const sh=Math.min(vh-sy,bRect.height/scale);
-  const canvas=document.getElementById('isoScanCanvas');
-  canvas.width=sw*2;canvas.height=sh*2;
+  const canvas=document.getElementById('scanCanvas2');
+  canvas.width=sw*2; canvas.height=sh*2;
   const ctx=canvas.getContext('2d');
   ctx.filter='contrast(1.8) brightness(1.15) grayscale(1)';
   ctx.scale(2,2);
   ctx.drawImage(video,sx,sy,sw,sh,0,0,sw,sh);
   try {
-    const result=await _isoScanWorker.recognize(canvas);
-    const rawText=(result.data.text||'').trim();
-    const match=isoFindInText(rawText);
-    document.getElementById('isoProcessing').style.display='none';
-    document.getElementById('isoCaptureBtn').style.display='none';
-    document.getElementById('isoResultRaw').textContent='OCR: '+rawText.replace(/\n/g,' ').substring(0,80);
+    const result = await _scanWorker.recognize(canvas);
+    const rawText = (result.data.text||'').trim();
+    const match = findIsoInText(rawText);
+    document.getElementById('scanProcessing').style.display='none';
+    document.getElementById('scanCaptureBtn').style.display='none';
+    document.getElementById('scanRaw').textContent='OCR: '+rawText.replace(/\n/g,' ').substring(0,80);
     if(match.best){
-      _isoScannedIso=match.best;
-      document.getElementById('isoResultMatch').textContent=match.best;
+      _scanResult = match.best;
+      document.getElementById('scanMatch').textContent=match.best;
       const others=match.top.filter(x=>x.iso!==match.best).slice(0,5);
+      const topWrap=document.getElementById('scanTopWrap');
       if(others.length){
-        document.getElementById('isoTopList').innerHTML=others.map(x=>`<div class="scanner-top-item" onclick="isoSelectTop('${x.iso}')">${x.iso}</div>`).join('');
-        document.getElementById('isoTopWrap').style.display='block';
-      } else document.getElementById('isoTopWrap').style.display='none';
-      document.getElementById('isoResultPanel').style.display='block';
+        document.getElementById('scanTopList').innerHTML=others.map(x=>`<div class="scanner-top-item" onclick="selectScanTop('${x.iso}')">${x.iso}</div>`).join('');
+        topWrap.style.display='block';
+      } else topWrap.style.display='none';
     } else if(match.top.length){
-      _isoScannedIso=match.top[0].iso;
-      document.getElementById('isoResultMatch').textContent=match.top[0].iso+' ?';
-      document.getElementById('isoTopList').innerHTML=match.top.map(x=>`<div class="scanner-top-item" onclick="isoSelectTop('${x.iso}')">${x.iso}</div>`).join('');
-      document.getElementById('isoTopWrap').style.display='block';
-      document.getElementById('isoResultPanel').style.display='block';
+      _scanResult=match.top[0].iso;
+      document.getElementById('scanMatch').textContent=match.top[0].iso+' ?';
+      document.getElementById('scanTopList').innerHTML=match.top.map(x=>`<div class="scanner-top-item" onclick="selectScanTop('${x.iso}')">${x.iso}</div>`).join('');
+      document.getElementById('scanTopWrap').style.display='block';
     } else {
-      _isoScannedIso=null;
-      document.getElementById('isoResultMatch').textContent='Nerozpoznané';
-      document.getElementById('isoTopWrap').style.display='none';
-      document.getElementById('isoResultPanel').style.display='block';
+      _scanResult=null;
+      document.getElementById('scanMatch').textContent='Nerozpoznané';
+      document.getElementById('scanTopWrap').style.display='none';
     }
+    document.getElementById('scanResultPanel').style.display='block';
   } catch(e){
-    document.getElementById('isoProcessing').style.display='none';
-    document.getElementById('isoCaptureBtn').style.display='block';
-    document.getElementById('isoCaptureBtn').textContent='📷 Skenuj';
+    document.getElementById('scanProcessing').style.display='none';
+    document.getElementById('scanCaptureBtn').style.display='block';
+    document.getElementById('scanCaptureBtn').textContent='📷 Skenuj';
     alert('OCR chyba: '+e.message);
   }
 };
 
-window.isoSelectTop=function(iso){_isoScannedIso=iso;document.getElementById('isoResultMatch').textContent=iso;document.getElementById('isoTopWrap').style.display='none';};
-window.isoConfirmScan=function(){if(_isoScannedIso){addScanIso(_isoScannedIso);isoRetryScan();}};
-window.isoRetryScan=function(){_isoScannedIso=null;document.getElementById('isoResultPanel').style.display='none';document.getElementById('isoCaptureBtn').style.display='block';document.getElementById('isoCaptureBtn').textContent='📷 Skenuj';};
+window.selectScanTop = function(iso){ _scanResult=iso; document.getElementById('scanMatch').textContent=iso; document.getElementById('scanTopWrap').style.display='none'; };
+window.confirmScanResult = function(){ if(_scanResult){ addScanIso(_scanResult); retryScanCapture(); } };
+window.retryScanCapture = function(){ _scanResult=null; document.getElementById('scanResultPanel').style.display='none'; document.getElementById('scanCaptureBtn').style.display='block'; document.getElementById('scanCaptureBtn').textContent='📷 Skenuj'; };
 
-function isoFindInText(text){
-  const isoList=Object.values(ISOMETRIES_DATA).flat();
+function addScanIso(val){
+  val=(val||'').trim().toUpperCase();
+  if(!val) return;
+  _scanList.push({val,time:new Date().toLocaleTimeString('sk-SK')});
+  renderScanList();
+}
+window.addScanManual = function(){
+  const inp=document.getElementById('scanManualInp');
+  if(inp.value.trim()) addScanIso(inp.value.trim().toUpperCase());
+  inp.value='';
+  const drop=document.getElementById('scanSearchDrop');
+  if(drop) drop.classList.remove('open');
+};
+window.undoScan = function(){ if(_scanList.length){ _scanList.pop(); renderScanList(); } };
+window.clearScanList = function(){ if(_scanList.length&&confirm('Vymazať všetky?')){ _scanList=[]; renderScanList(); } };
+
+function renderScanList(){
+  const el=document.getElementById('scanListBody');
+  const counts={};
+  _scanList.forEach(r=>{ counts[r.val]=(counts[r.val]||0)+1; });
+  const cnt=document.getElementById('scanCount');
+  if(cnt) cnt.textContent=_scanList.length;
+  if(!el) return;
+  el.innerHTML=_scanList.map((r,i)=>`<div class="scanner-item" style="${counts[r.val]>1?'color:#fb923c':''}"><span style="font-weight:700">${r.val}${counts[r.val]>1?'<span style="background:#fb923c;color:#000;font-size:9px;padding:1px 4px;border-radius:3px;margin-left:4px">DUP</span>':''}</span><span style="color:var(--text3);font-size:10px">${r.time}</span></div>`).reverse().join('');
+}
+
+window.exportScanExcel = function(){
+  if(!_scanList.length){ alert('Žiadne izometrie!'); return; }
+  const ts = Date.now();
+  const date = new Date(ts).toLocaleDateString('sk-SK');
+  const user = window._currentUser ? (window._currentUser.displayName||window._currentUser.email.split('@')[0]) : 'Neznámy';
+  const updates = {};
+  _scanList.forEach(item=>{
+    const key = 'ob_'+ts+'_'+Math.random().toString(36).slice(2,6);
+    updates[key] = {iso: item.val, date, ts, user};
+  });
+  db.ref('obalky').update(updates);
+  const counts={};
+  _scanList.forEach(r=>{ counts[r.val]=(counts[r.val]||0)+1; });
+  const data=[['#','Izometria','Čas','Duplicitná']];
+  _scanList.forEach((r,i)=>data.push([i+1,r.val,r.time,counts[r.val]>1?'ÁNO':'']));
+  data.push([],['Celkom:',_scanList.length],['Unikátnych:',Object.keys(counts).length]);
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[{wch:5},{wch:35},{wch:12},{wch:12}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Izometrie');
+  XLSX.writeFile(wb,'obalky_'+today()+'.xlsx');
+};
+
+function findIsoInText(text){
+  const isoList = Object.values(ISOMETRIES_DATA).flat();
   if(!isoList.length) return {best:null,top:[]};
-  function fix(s){return s.toUpperCase().replace(/O/g,'0').replace(/[lI]/g,'1').replace(/S/g,'5').replace(/Z/g,'2').replace(/B/g,'8').replace(/[^A-Z0-9]/g,'');}
+  function fix(s){ return s.toUpperCase().replace(/O/g,'0').replace(/[lI]/g,'1').replace(/S/g,'5').replace(/Z/g,'2').replace(/B/g,'8').replace(/[^A-Z0-9]/g,''); }
   const rawUp=text.toUpperCase();
   const rawClean=rawUp.replace(/[^A-Z0-9\-]/g,' ').replace(/\s+/g,' ').trim();
   const rawNoSep=rawUp.replace(/[^A-Z0-9]/g,'');
   const rawFixed=fix(rawNoSep);
   const tokens=(rawUp.match(/[A-Z0-9][A-Z0-9\-]{3,}/g)||[]);
   const scored=isoList.map(iso=>{
-    const ic=iso.toUpperCase(),icNoSep=ic.replace(/[^A-Z0-9]/g,''),icFixed=fix(icNoSep);
+    const ic=iso.toUpperCase();
+    const icNoSep=ic.replace(/[^A-Z0-9]/g,'');
+    const icFixed=fix(icNoSep);
     const segs=ic.split(/[^A-Z0-9]+/).filter(s=>s.length>0);
     let score=0;
     if(rawNoSep.includes(icNoSep)||rawFixed.includes(icFixed)) return {iso,score:2000};
     const ocrParts=rawClean.split(' ');
     ocrParts.forEach(op=>{op=op.replace(/[^A-Z0-9]/g,'');if(op.length>=4&&(icNoSep.includes(op)||fix(icNoSep).includes(fix(op)))) score+=op.length*30;});
-    let segHits=0;
-    segs.forEach(seg=>{if(seg.length>=2&&(rawNoSep.includes(seg)||rawFixed.includes(fix(seg)))) segHits+=seg.length;});
-    score+=segHits*15;
-    tokens.forEach(tok=>{tok=tok.replace(/[^A-Z0-9]/g,'');if(tok.length>=3&&(icNoSep.includes(tok)||fix(icNoSep).includes(fix(tok)))) score+=tok.length*20;});
+    segs.forEach(seg=>{ if(seg.length>=2&&(rawNoSep.includes(seg)||rawFixed.includes(fix(seg)))) score+=seg.length*15; });
+    tokens.forEach(tok=>{ const t2=tok.replace(/[^A-Z0-9]/g,''); if(t2.length>=3&&(icNoSep.includes(t2)||fix(icNoSep).includes(fix(t2)))) score+=t2.length*20; });
     return {iso,score};
   });
   scored.sort((a,b)=>b.score-a.score);
   const top=scored.filter(x=>x.score>=60).slice(0,8);
   let best=null;
-  if(top.length>0){if(top[0].score>=400)best=top[0].iso;else if(top.length>=2&&top[0].score>=top[1].score*2&&top[0].score>=150)best=top[0].iso;}
+  if(top.length>0){ if(top[0].score>=400) best=top[0].iso; else if(top.length>=2&&top[0].score>=top[1].score*2&&top[0].score>=150) best=top[0].iso; }
   return {best,top};
 }
 
-window.addScanManual=function(){const inp=document.getElementById('scanManualInp');if(inp.value.trim())addScanIso(inp.value.trim().toUpperCase());inp.value='';document.getElementById('scanSearchDrop').classList.remove('open');};
-window.undoScan=function(){if(_scanList.length){_scanList.pop();renderScanList();}};
-window.clearScanList=function(){if(_scanList.length&&confirm('Vymazať všetky?')){_scanList=[];renderScanList();}};
+window.captureIso = async function(){
+  const video = document.getElementById('isoScanVideo');
+  const box = document.getElementById('isoScanBox');
+  if(!video.videoWidth){ alert('Kamera nie je pripravená'); return; }
+  document.getElementById('scanCaptureBtn').textContent='⏳';
+  document.getElementById('scanProcessing').style.display='block';
+  document.getElementById('scanResultPanel').style.display='none';
+  const vRect=video.getBoundingClientRect(), bRect=box.getBoundingClientRect();
+  const vw=video.videoWidth, vh=video.videoHeight;
+  const scale=Math.min(vRect.width/vw,vRect.height/vh);
+  const rendW=vw*scale, rendH=vh*scale;
+  const ox=(vRect.width-rendW)/2, oy=(vRect.height-rendH)/2;
+  const sx=Math.max(0,(bRect.left-vRect.left-ox)/scale);
+  const sy=Math.max(0,(bRect.top-vRect.top-oy)/scale);
+  const sw=Math.min(vw-sx,bRect.width/scale);
+  const sh=Math.min(vh-sy,bRect.height/scale);
+  const canvas=document.getElementById('scanCanvas2');
+  canvas.width=sw*2; canvas.height=sh*2;
+  const ctx=canvas.getContext('2d');
+  ctx.filter='contrast(1.8) brightness(1.15) grayscale(1)';
+  ctx.scale(2,2);
+  ctx.drawImage(video,sx,sy,sw,sh,0,0,sw,sh);
+  try {
+    const result = await _scanWorker.recognize(canvas);
+    const rawText = (result.data.text||'').trim();
+    const match = findIsoInText(rawText);
+    document.getElementById('scanProcessing').style.display='none';
+    document.getElementById('scanCaptureBtn').style.display='none';
+    document.getElementById('scanRaw').textContent='OCR: '+rawText.replace(/\n/g,' ').substring(0,80);
+    if(match.best){
+      _scanResult = match.best;
+      document.getElementById('scanMatch').textContent=match.best;
+      const others=match.top.filter(x=>x.iso!==match.best).slice(0,5);
+      const topWrap=document.getElementById('scanTopWrap');
+      if(others.length){
+        document.getElementById('scanTopList').innerHTML=others.map(x=>`<div class="scanner-top-item" onclick="selectScanTop('${x.iso}')">${x.iso}</div>`).join('');
+        topWrap.style.display='block';
+      } else topWrap.style.display='none';
+    } else if(match.top.length){
+      _scanResult=match.top[0].iso;
+      document.getElementById('scanMatch').textContent=match.top[0].iso+' ?';
+      document.getElementById('scanTopList').innerHTML=match.top.map(x=>`<div class="scanner-top-item" onclick="selectScanTop('${x.iso}')">${x.iso}</div>`).join('');
+      document.getElementById('scanTopWrap').style.display='block';
+    } else {
+      _scanResult=null;
+      document.getElementById('scanMatch').textContent='Nerozpoznané';
+      document.getElementById('scanTopWrap').style.display='none';
+    }
+    document.getElementById('scanResultPanel').style.display='block';
+  } catch(e){
+    document.getElementById('scanProcessing').style.display='none';
+    document.getElementById('scanCaptureBtn').style.display='block';
+    document.getElementById('scanCaptureBtn').textContent='📷 Skenuj';
+    alert('OCR chyba: '+e.message);
+  }
+};
+
+window.selectScanTop = function(iso){ _scanResult=iso; document.getElementById('scanMatch').textContent=iso; document.getElementById('scanTopWrap').style.display='none'; };
+window.confirmScanResult = function(){ if(_scanResult){ addScanIso(_scanResult); retryScanCapture(); } };
+window.retryScanCapture = function(){ _scanResult=null; document.getElementById('scanResultPanel').style.display='none'; document.getElementById('scanCaptureBtn').style.display='block'; document.getElementById('scanCaptureBtn').textContent='📷 Skenuj'; };
 
 function addScanIso(val){
-  val=(val||'').trim().toUpperCase();if(!val)return;
+  val=(val||'').trim().toUpperCase();
+  if(!val) return;
   _scanList.push({val,time:new Date().toLocaleTimeString('sk-SK')});
   renderScanList();
 }
+window.addScanManual = function(){
+  const inp=document.getElementById('scanManualInp');
+  if(inp.value.trim()) addScanIso(inp.value.trim().toUpperCase());
+  inp.value='';
+  document.getElementById('scanSearchDrop').style.display='none';
+};
+window.undoScan = function(){ if(_scanList.length){ _scanList.pop(); renderScanList(); } };
+window.clearScanList = function(){ if(_scanList.length&&confirm('Vymazať všetky?')){ _scanList=[]; renderScanList(); } };
 
 function renderScanList(){
   const el=document.getElementById('scanListBody');
-  const cnt=document.getElementById('scanCount');
-  if(cnt) cnt.textContent=_scanList.length;
-  if(!el) return;
   const counts={};
-  _scanList.forEach(r=>{counts[r.val]=(counts[r.val]||0)+1;});
-  el.innerHTML=_scanList.map((r,i)=>`<div class="scanner-item" style="${counts[r.val]>1?'color:#fb923c':''}"><span style="font-weight:700">${r.val}${counts[r.val]>1?'<span style="background:#fb923c;color:#000;font-size:9px;padding:1px 4px;border-radius:3px;margin-left:4px">DUP</span>':''}</span><span style="color:var(--text3);font-size:10px">${r.time}</span></div>`).reverse().join('');
+  _scanList.forEach(r=>{ counts[r.val]=(counts[r.val]||0)+1; });
+  document.getElementById('scanCount').textContent=_scanList.length;
+  el.innerHTML=_scanList.map((r,i)=>`<div class="scanner-item" style="${counts[r.val]>1?'color:#fb923c':''}"><span style="font-weight:700">${r.val}</span><span style="color:var(--text3);font-size:10px">${r.time}</span></div>`).reverse().join('');
+}
+
+window.exportScanExcel = function(){
+  if(!_scanList.length){ alert('Žiadne izometrie!'); return; }
+  // Ulož do Firebase AŽ pri exporte
+  const ts = Date.now();
+  const date = new Date(ts).toLocaleDateString('sk-SK');
+  const user = window._currentUser ? (window._currentUser.displayName||window._currentUser.email.split('@')[0]) : 'Neznámy';
+  const updates = {};
+  _scanList.forEach(item=>{
+    const key = 'ob_'+ts+'_'+Math.random().toString(36).slice(2,6);
+    updates[key] = {iso: item.val, date, ts, user};
+  });
+  db.ref('obalky').update(updates);
+  // Export Excel
+  const counts={};
+  _scanList.forEach(r=>{ counts[r.val]=(counts[r.val]||0)+1; });
+  const data=[['#','Izometria','Čas','Duplicitná']];
+  _scanList.forEach((r,i)=>data.push([i+1,r.val,r.time,counts[r.val]>1?'ÁNO':'']));
+  data.push([],['Celkom:',_scanList.length],['Unikátnych:',Object.keys(counts).length]);
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[{wch:5},{wch:35},{wch:12},{wch:12}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Izometrie');
+  XLSX.writeFile(wb,'obalky_'+today()+'.xlsx');
+};
+
+function findIsoInText(text){
+  const isoList = Object.values(ISOMETRIES_DATA).flat();
+  if(!isoList.length) return {best:null,top:[]};
+  function fix(s){ return s.toUpperCase().replace(/O/g,'0').replace(/[lI]/g,'1').replace(/S/g,'5').replace(/Z/g,'2').replace(/B/g,'8').replace(/[^A-Z0-9]/g,''); }
+  const rawUp=text.toUpperCase();
+  const rawNoSep=rawUp.replace(/[^A-Z0-9]/g,'');
+  const rawFixed=fix(rawNoSep);
+  const tokens=(rawUp.match(/[A-Z0-9][A-Z0-9\-]{3,}/g)||[]);
+  const scored=isoList.map(iso=>{
+    const ic=iso.toUpperCase();
+    const icNoSep=ic.replace(/[^A-Z0-9]/g,'');
+    const icFixed=fix(icNoSep);
+    const segs=ic.split(/[^A-Z0-9]+/).filter(s=>s.length>0);
+    let score=0;
+    if(rawNoSep.includes(icNoSep)||rawFixed.includes(icFixed)) return {iso,score:2000};
+    segs.forEach(seg=>{ if(seg.length>=2&&(rawNoSep.includes(seg)||rawFixed.includes(fix(seg)))) score+=seg.length*15; });
+    tokens.forEach(tok=>{ const t=tok.replace(/[^A-Z0-9]/g,''); if(t.length>=3&&(icNoSep.includes(t)||fix(icNoSep).includes(fix(t)))) score+=t.length*20; });
+    return {iso,score};
+  });
+  scored.sort((a,b)=>b.score-a.score);
+  const top=scored.filter(x=>x.score>=60).slice(0,8);
+  let best=null;
+  if(top.length>0){ if(top[0].score>=400) best=top[0].iso; else if(top.length>=2&&top[0].score>=top[1].score*2&&top[0].score>=150) best=top[0].iso; }
+  return {best,top};
 }
 
 // ===== FOTKY K NAKLADKE =====
@@ -6830,7 +6987,10 @@ window.scanSearchFilter = function(q){
     </div>
     <!-- TAB: Skenovanie -->
     <div id="scanTabScan">
-      <div style="padding:12px 16px;position:relative">
+      <div style="padding:12px 16px 6px">
+        <button onclick="openScanOverlay()" class="btn btn-blue" style="width:100%;padding:13px;font-size:15px;font-weight:700">📷 Otvoriť kameru / skener</button>
+      </div>
+      <div style="padding:6px 16px;position:relative">
         <div style="position:relative">
           <div style="display:flex;gap:8px">
             <input id="scanManualInp" class="m-inp" placeholder="Hľadaj alebo zadaj ručne..." style="flex:1" oninput="scanSearchFilter(this.value)" onblur="setTimeout(()=>document.getElementById('scanSearchDrop').classList.remove('open'),200)" autocomplete="off" />
@@ -6861,31 +7021,31 @@ window.scanSearchFilter = function(q){
 </div>
 
 <!-- SCANNER OVERLAY (fullscreen kamera) -->
-<div class="scanner-overlay" id="isoScanOverlay">
+<div class="scanner-overlay" id="scanOverlay">
   <div class="scanner-video-wrap">
     <video id="isoScanVideo" autoplay playsinline muted></video>
     <div class="scanner-box" id="isoScanBox"><div class="scanner-line"></div></div>
     <div class="scanner-hint">Namier na názov izometrie</div>
   </div>
-  <div class="scanner-processing" id="isoProcessing" style="display:none">⏳ Čítam text...</div>
-  <div class="scanner-result" id="isoResultPanel" style="display:none">
-    <div class="scanner-raw" id="isoResultRaw"></div>
-    <div class="scanner-match" id="isoResultMatch"></div>
+  <div class="scanner-processing" id="scanProcessing">⏳ Čítam text...</div>
+  <div class="scanner-result" id="scanResultPanel">
+    <div class="scanner-raw" id="scanRaw"></div>
+    <div class="scanner-match" id="scanMatch"></div>
     <div class="scanner-btns">
-      <button class="btn btn-green" onclick="isoConfirmScan()" style="flex:1;padding:13px;font-size:15px">✅ Potvrď</button>
-      <button class="btn" onclick="isoRetryScan()" style="padding:13px 16px">🔄 Znova</button>
+      <button class="btn btn-green" onclick="confirmScanResult()" style="flex:1;padding:12px">✅ Potvrď</button>
+      <button class="btn" onclick="retryScanCapture()" style="padding:12px 16px">🔄 Znova</button>
     </div>
-    <div id="isoTopWrap" style="display:none">
+    <div id="scanTopWrap" style="display:none">
       <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Iné možnosti:</div>
-      <div class="scanner-top-list" id="isoTopList"></div>
+      <div class="scanner-top-list" id="scanTopList"></div>
     </div>
   </div>
   <div class="scanner-footer">
-    <button class="btn btn-blue" id="isoCaptureBtn" onclick="isoCapture()" style="flex:1;padding:15px;font-size:16px">📷 Skenuj</button>
-    <button class="btn" onclick="closeIsoScanner()" style="padding:15px 20px">✕</button>
+    <button class="btn btn-blue" id="scanCaptureBtn" onclick="captureIso()" style="flex:1;padding:14px;font-size:16px">📷 Skenuj</button>
+    <button class="btn" onclick="closeScanOverlay()" style="padding:14px 18px">✕</button>
   </div>
 </div>
-<canvas id="isoScanCanvas" style="display:none"></canvas>
+<canvas id="scanCanvas2" style="display:none"></canvas>
 
 <!-- FOTKY K NAKLADKE MODAL -->
 <div id="fotoModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9991;align-items:center;justify-content:center">
