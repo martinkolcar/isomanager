@@ -6215,9 +6215,18 @@ initAvPick();
 var _isoScanStream = null, _isoScanWorker = null, _isoScannedIso = null;
 var _scanList = [], _scanResult = null;
 
+window.setScanTab = function(tab){
+  document.getElementById('scanTabScan').style.display = tab==='scan'?'block':'none';
+  document.getElementById('scanTabHistory').style.display = tab==='history'?'block':'none';
+  document.getElementById('scanTab1').className = tab==='scan'?'btn btn-blue':'btn';
+  document.getElementById('scanTab2').className = tab==='history'?'btn btn-blue':'btn';
+  if(tab==='history') window.renderObalkyHistory();
+};
+
 window.openScannerModal = function(){
   _scanList = [];
   renderScanList();
+  window.setScanTab('scan');
   document.getElementById('scannerModal').style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9990;align-items:center;justify-content:center';
 };
 window.closeScannerModal = function(){
