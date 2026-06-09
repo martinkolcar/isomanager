@@ -5300,7 +5300,7 @@ function renderPrehlad(){
   el.innerHTML=`<table>
     <thead><tr>
       <th>${t('sekcia')}</th><th>${t('izometria')}</th><th>PED</th><th>SP</th><th>${t('popis')}</th><th>${t('stav')}</th>
-      <th>${t('vyvezene')}</th><th>${t('balik')}</th><th>${t('vytvoril')}</th><th>${t('nakladka')}</th><th>${t('datum')}</th>
+      <th>${t('vyvezene')}</th><th>${t('balik')}</th><th>${t('vytvoril')}</th><th>${t('nakladka')}</th><th>${t('datum')}</th><th>${t('poznamka')}</th>
     </tr></thead>
     <tbody>${rows.map(sp=>{
       const bName=sp.balikId&&baliky[sp.balikId]?`<span class="pkg-chip">${baliky[sp.balikId].name}</span>`:'—';
@@ -5326,6 +5326,7 @@ function renderPrehlad(){
         <td style="font-size:11px;color:var(--text3)">${sp.creator||'—'}</td>
         <td>${nName}</td>
         <td style="font-size:11px;color:var(--text3)">${nDate}</td>
+        <td style="font-size:11px;color:var(--text3)">${sp.note||'—'}</td>
       </tr>`;
     }).join('')}</tbody>
   </table>`;
