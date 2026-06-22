@@ -2801,7 +2801,7 @@ tr:hover td{background:var(--surface2)}
       <select class="sb-inp" style="width:120px" id="filterBalik" onchange="renderPrehlad()"><option value="" data-lang-opt="balik_vsetky">Balík (všetky)</option></select>
       <select class="sb-inp" style="width:130px" id="filterNakladka" onchange="renderPrehlad()"><option value="" data-lang-opt="nakladka_vsetky">Nakladka (všetky)</option></select>
       <select class="sb-inp" style="width:120px" id="filterDatum" onchange="renderPrehlad()"><option value="" data-lang-opt="datum_vsetky">Dátum (všetky)</option></select>
-      <select class="sb-inp" style="width:150px" id="filterVyvezDatum" onchange="renderPrehlad()"><option value="">Dát. vyvezenia (všetky)</option></select>
+      <select class="sb-inp" style="width:150px" id="filterVyvezDatum" onchange="renderPrehlad()"><option value="">Vyvezené dňa (všetky)</option></select>
       <button class="btn btn-green" onclick="exportPrehladExcel()">📊 Excel</button>
       <button class="btn btn-red" onclick="cleanUndefinedSpools()" title="Zmaže všetky spooly bez čísla">🧹 Vyčistiť</button>
     </div>
@@ -5264,15 +5264,20 @@ function populatePrehladFilters(all){
   // Dátumy vyvezenia - extrahuj len dátumovú časť z "2.6.2026, 14:30:00"
   function extractVyvezDate(kedy){
     if(!kedy) return '';
-    const m = kedy.match(/^(\d{1,2}\.\d{1,2}\.\d{4})/);
+    const m = (kedy||'').match(/^(\d{1,2}\.\d{1,2}\.\d{4})/);
     return m ? m[1] : kedy.split(',')[0].trim();
   }
-  const vyvezDats = [...new Set(all.filter(sp=>sp.vyvezene&&sp.vyvezeneKedy).map(sp=>extractVyvezDate(sp.vyvezeneKedy)).filter(Boolean))].sort((a,b)=>{
-    // Zoraď zostupne (najnovší navrchu): d.m.yyyy -> porovnaj
-    const pa=a.split('.'), pb=b.split('.');
-    const da=new Date(pa[2],pa[1]-1,pa[0]), db=new Date(pb[2],pb[1]-1,pb[0]);
-    return db-da;
-  });
+  function parseSKDate(d){
+    const p=(d||'').split('.');
+    if(p.length<3) return 0;
+    return new Date(p[2],p[1]-1,p[0]).getTime()||0;
+  }
+  // Unikátne dátumy vyvezenia (bez času) zoradené zostupne
+  const vyvezDats = [...new Set(
+    all.filter(sp=>sp.vyvezene&&sp.vyvezeneKedy)
+       .map(sp=>extractVyvezDate(sp.vyvezeneKedy))
+       .filter(Boolean)
+  )].sort((a,b)=>parseSKDate(b)-parseSKDate(a));
 
   pedEl.innerHTML = `<option value="">${t('stav')||'PED'} (${t('vsetky')})</option>` + peds.map(v=>`<option value="${v}"${v===pedVal?' selected':''}>${v}</option>`).join('');
   balikEl.innerHTML = `<option value="">${t('balik')} (${t('vsetky')})</option>` + baliks.map(v=>`<option value="${v}"${v===balikVal?' selected':''}>${v}</option>`).join('');
@@ -5317,7 +5322,19 @@ function renderPrehlad(){
       if(spVyvezDat!==filterVyvezDat) return false;
     }
     return true;
-  }).sort((a,b)=>a.sec.localeCompare(b.sec)||a.iso.localeCompare(b.iso)||(parseInt(a.num)||0)-(parseInt(b.num)||0));
+  }).sort((a,b)=>{
+    // Ak je aktívny filter vyvezených alebo filter vyvezDat → zoraď podľa dátumu vyvezenia zostupne
+    function parseSKDate(d){
+      const p=(d||'').split('.');
+      if(p.length<3) return 0;
+      return new Date(p[2],p[1]-1,p[0]).getTime()||0;
+    }
+    function extractVD(kedy){ const m=(kedy||'').match(/^(\d{1,2}\.\d{1,2}\.\d{4})/); return m?m[1]:''; }
+    const aD=parseSKDate(extractVD(a.vyvezeneKedy));
+    const bD=parseSKDate(extractVD(b.vyvezeneKedy));
+    if(aD||bD) return bD-aD; // zoraď podľa dátumu vyvezenia zostupne
+    return a.sec.localeCompare(b.sec)||a.iso.localeCompare(b.iso)||(parseInt(a.num)||0)-(parseInt(b.num)||0);
+  });
 
   if(!rows.length){
     el.innerHTML='<div class="empty"><div class="empty-ico">🔍</div><div>Žiadne výsledky</div></div>';
