@@ -2801,6 +2801,7 @@ tr:hover td{background:var(--surface2)}
       <select class="sb-inp" style="width:120px" id="filterBalik" onchange="renderPrehlad()"><option value="" data-lang-opt="balik_vsetky">Balík (všetky)</option></select>
       <select class="sb-inp" style="width:130px" id="filterNakladka" onchange="renderPrehlad()"><option value="" data-lang-opt="nakladka_vsetky">Nakladka (všetky)</option></select>
       <select class="sb-inp" style="width:120px" id="filterDatum" onchange="renderPrehlad()"><option value="" data-lang-opt="datum_vsetky">Dátum (všetky)</option></select>
+      <select class="sb-inp" style="width:150px" id="filterVyvezDatum" onchange="renderPrehlad()"><option value="">Vyvezené dňa (všetky)</option></select>
       <button class="btn btn-green" onclick="exportPrehladExcel()">📊 Excel</button>
       <button class="btn btn-red" onclick="cleanUndefinedSpools()" title="Zmaže všetky spooly bez čísla">🧹 Vyčistiť</button>
     </div>
@@ -5261,27 +5262,19 @@ function populatePrehladFilters(all){
   const dats = [...new Set(all.map(sp=>{const n=_getNak(sp);return n?n.date:''}).filter(Boolean))].sort().reverse();
 
   // Dátumy vyvezenia - extrahuj len dátumovú časť z "2.6.2026, 14:30:00"
-  // Extrahuj len dátum (bez času) - podporuje "16. 6. 2026 15:00" aj "16.6.2026, 14:30"
   function extractVyvezDate(kedy){
     if(!kedy) return '';
-    // Odstráň medzery okolo bodiek: "16. 6. 2026" -> "16.6.2026"
-    const normalized = kedy.replace(/\s*\.\s*/g, '.').trim();
-    const m = normalized.match(/^(\d{1,2}\.\d{1,2}\.\d{4})/);
-    if(m) return m[1];
-    // fallback: vezmi prvú časť pred čiarkou alebo medzerou+rok
-    const parts = kedy.trim().split(/[,\s]+/);
-    // hľadaj d. m. yyyy pattern
-    const joined = parts.slice(0,3).join('').replace(/\./g,'.');
-    const m2 = joined.match(/(\d{1,2}\.\d{1,2}\.\d{4})/);
-    return m2 ? m2[1] : '';
+    // Normalizuj "16. 6. 2026 15:00" -> "16.6.2026"
+    const norm=(kedy||'').replace(/\s*\.\s*/g,'.').trim();
+    const m=norm.match(/^(\d{1,2}\.\d{1,2}\.\d{4})/);
+    return m?m[1]:'';
   }
   function parseSKDate(d){
     const p=(d||'').split('.');
     if(p.length<3) return 0;
     return new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0])).getTime()||0;
   }
-  // Unikátne dátumy vyvezenia zoradené zostupne (najnovší navrchu)
-  const vyvezDats = [...new Set(
+  const vyvezDats=[...new Set(
     all.filter(sp=>sp.vyvezene&&sp.vyvezeneKedy)
        .map(sp=>extractVyvezDate(sp.vyvezeneKedy))
        .filter(Boolean)
@@ -5306,13 +5299,13 @@ function renderPrehlad(){
   const all=getAllSpools();
   populatePrehladFilters(all);
   // Helper: extrahuj dátum z "2.6.2026, 14:30:00"
-  function extractVyvezDate(kedy){
+  function extractVD(kedy){
     if(!kedy) return '';
-    const normalized=(kedy||'').replace(/\s*\.\s*/g,'.').trim();
-    const m=normalized.match(/^(\d{1,2}\.\d{1,2}\.\d{4})/);
+    const norm=(kedy||'').replace(/\s*\.\s*/g,'.').trim();
+    const m=norm.match(/^(\d{1,2}\.\d{1,2}\.\d{4})/);
     return m?m[1]:'';
   }
-  function parseSKDate2(d){
+  function parseSKD(d){
     const p=(d||'').split('.');
     if(p.length<3) return 0;
     return new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0])).getTime()||0;
@@ -5332,14 +5325,13 @@ function renderPrehlad(){
       if(filterDat){const d=_fnk?_fnk.date:''; if(d!==filterDat) return false;}
     }
     if(filterVyvezDat){
-      const spVyvezDat=extractVyvezDate(sp.vyvezeneKedy||'');
+      const spVyvezDat=extractVD(sp.vyvezeneKedy||'');
       if(spVyvezDat!==filterVyvezDat) return false;
     }
     return true;
   }).sort((a,b)=>{
-    // Zoraď podľa dátumu vyvezenia zostupne (najnovší navrchu)
-    const aD=parseSKDate2(extractVyvezDate(a.vyvezeneKedy||''));
-    const bD=parseSKDate2(extractVyvezDate(b.vyvezeneKedy||''));
+    const aD=parseSKD(extractVD(a.vyvezeneKedy||''));
+    const bD=parseSKD(extractVD(b.vyvezeneKedy||''));
     if(aD||bD) return bD-aD;
     return a.sec.localeCompare(b.sec)||a.iso.localeCompare(b.iso)||(parseInt(a.num)||0)-(parseInt(b.num)||0);
   });
@@ -5378,7 +5370,7 @@ function renderPrehlad(){
         <td>${bName}</td>
         <td style="font-size:11px;color:var(--text3)">${sp.creator||'—'}</td>
         <td>${nName}</td>
-        <td style="font-size:11px;color:var(--text3)">${nDate}</td>
+        <td style="font-size:11px;color:var(--text3)">${extractVD(sp.vyvezeneKedy||'')||nDate}</td>
         <td style="font-size:11px;color:var(--text3)">${sp.note||'—'}</td>
       </tr>`;
     }).join('')}</tbody>
