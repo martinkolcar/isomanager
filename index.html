@@ -2801,7 +2801,6 @@ tr:hover td{background:var(--surface2)}
       <select class="sb-inp" style="width:120px" id="filterBalik" onchange="renderPrehlad()"><option value="" data-lang-opt="balik_vsetky">Balík (všetky)</option></select>
       <select class="sb-inp" style="width:130px" id="filterNakladka" onchange="renderPrehlad()"><option value="" data-lang-opt="nakladka_vsetky">Nakladka (všetky)</option></select>
       <select class="sb-inp" style="width:120px" id="filterDatum" onchange="renderPrehlad()"><option value="" data-lang-opt="datum_vsetky">Dátum (všetky)</option></select>
-      <select class="sb-inp" style="width:150px" id="filterVyvezDatum" onchange="renderPrehlad()"><option value="">Vyvezené dňa (všetky)</option></select>
       <button class="btn btn-green" onclick="exportPrehladExcel()">📊 Excel</button>
       <button class="btn btn-red" onclick="cleanUndefinedSpools()" title="Zmaže všetky spooly bez čísla">🧹 Vyčistiť</button>
     </div>
@@ -5262,17 +5261,26 @@ function populatePrehladFilters(all){
   const dats = [...new Set(all.map(sp=>{const n=_getNak(sp);return n?n.date:''}).filter(Boolean))].sort().reverse();
 
   // Dátumy vyvezenia - extrahuj len dátumovú časť z "2.6.2026, 14:30:00"
+  // Extrahuj len dátum (bez času) - podporuje "16. 6. 2026 15:00" aj "16.6.2026, 14:30"
   function extractVyvezDate(kedy){
     if(!kedy) return '';
-    const m = (kedy||'').match(/^(\d{1,2}\.\d{1,2}\.\d{4})/);
-    return m ? m[1] : kedy.split(',')[0].trim();
+    // Odstráň medzery okolo bodiek: "16. 6. 2026" -> "16.6.2026"
+    const normalized = kedy.replace(/\s*\.\s*/g, '.').trim();
+    const m = normalized.match(/^(\d{1,2}\.\d{1,2}\.\d{4})/);
+    if(m) return m[1];
+    // fallback: vezmi prvú časť pred čiarkou alebo medzerou+rok
+    const parts = kedy.trim().split(/[,\s]+/);
+    // hľadaj d. m. yyyy pattern
+    const joined = parts.slice(0,3).join('').replace(/\./g,'.');
+    const m2 = joined.match(/(\d{1,2}\.\d{1,2}\.\d{4})/);
+    return m2 ? m2[1] : '';
   }
   function parseSKDate(d){
     const p=(d||'').split('.');
     if(p.length<3) return 0;
-    return new Date(p[2],p[1]-1,p[0]).getTime()||0;
+    return new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0])).getTime()||0;
   }
-  // Unikátne dátumy vyvezenia (bez času) zoradené zostupne
+  // Unikátne dátumy vyvezenia zoradené zostupne (najnovší navrchu)
   const vyvezDats = [...new Set(
     all.filter(sp=>sp.vyvezene&&sp.vyvezeneKedy)
        .map(sp=>extractVyvezDate(sp.vyvezeneKedy))
@@ -5300,8 +5308,14 @@ function renderPrehlad(){
   // Helper: extrahuj dátum z "2.6.2026, 14:30:00"
   function extractVyvezDate(kedy){
     if(!kedy) return '';
-    const m=(kedy||'').match(/^(\d{1,2}\.\d{1,2}\.\d{4})/);
-    return m?m[1]:kedy.split(',')[0].trim();
+    const normalized=(kedy||'').replace(/\s*\.\s*/g,'.').trim();
+    const m=normalized.match(/^(\d{1,2}\.\d{1,2}\.\d{4})/);
+    return m?m[1]:'';
+  }
+  function parseSKDate2(d){
+    const p=(d||'').split('.');
+    if(p.length<3) return 0;
+    return new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0])).getTime()||0;
   }
   const rows=all.filter(sp=>{
     if(prehladFilter==='volny'&&(sp.balikId||sp.nakladkaId||sp.vyvezene)) return false;
@@ -5323,16 +5337,10 @@ function renderPrehlad(){
     }
     return true;
   }).sort((a,b)=>{
-    // Ak je aktívny filter vyvezených alebo filter vyvezDat → zoraď podľa dátumu vyvezenia zostupne
-    function parseSKDate(d){
-      const p=(d||'').split('.');
-      if(p.length<3) return 0;
-      return new Date(p[2],p[1]-1,p[0]).getTime()||0;
-    }
-    function extractVD(kedy){ const m=(kedy||'').match(/^(\d{1,2}\.\d{1,2}\.\d{4})/); return m?m[1]:''; }
-    const aD=parseSKDate(extractVD(a.vyvezeneKedy));
-    const bD=parseSKDate(extractVD(b.vyvezeneKedy));
-    if(aD||bD) return bD-aD; // zoraď podľa dátumu vyvezenia zostupne
+    // Zoraď podľa dátumu vyvezenia zostupne (najnovší navrchu)
+    const aD=parseSKDate2(extractVyvezDate(a.vyvezeneKedy||''));
+    const bD=parseSKDate2(extractVyvezDate(b.vyvezeneKedy||''));
+    if(aD||bD) return bD-aD;
     return a.sec.localeCompare(b.sec)||a.iso.localeCompare(b.iso)||(parseInt(a.num)||0)-(parseInt(b.num)||0);
   });
 
