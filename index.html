@@ -5245,12 +5245,14 @@ function populatePrehladFilters(all){
   const balikEl = document.getElementById('filterBalik');
   const nakEl = document.getElementById('filterNakladka');
   const datEl = document.getElementById('filterDatum');
+  const vyvezDatEl = document.getElementById('filterVyvezDatum');
   if(!pedEl) return;
 
   const pedVal = pedEl.value;
   const balikVal = balikEl.value;
   const nakVal = nakEl.value;
   const datVal = datEl.value;
+  const vyvezDatVal = vyvezDatEl ? vyvezDatEl.value : '';
 
   const peds = [...new Set(all.map(sp=>(typeof PED_DATA!=="undefined"&&PED_DATA[sp.sec]&&PED_DATA[sp.sec][sp.iso])||'').filter(Boolean))].sort();
   const baliks = [...new Set(all.map(sp=>sp.balikId&&baliky[sp.balikId]?baliky[sp.balikId].name:'').filter(Boolean))].sort();
@@ -5258,10 +5260,24 @@ function populatePrehladFilters(all){
   const naks = [...new Set(all.map(sp=>{const n=_getNak(sp);return n?n.name:''}).filter(Boolean))].sort();
   const dats = [...new Set(all.map(sp=>{const n=_getNak(sp);return n?n.date:''}).filter(Boolean))].sort().reverse();
 
+  // Dátumy vyvezenia - extrahuj len dátumovú časť z "2.6.2026, 14:30:00"
+  function extractVyvezDate(kedy){
+    if(!kedy) return '';
+    const m = kedy.match(/^(\d{1,2}\.\d{1,2}\.\d{4})/);
+    return m ? m[1] : kedy.split(',')[0].trim();
+  }
+  const vyvezDats = [...new Set(all.filter(sp=>sp.vyvezene&&sp.vyvezeneKedy).map(sp=>extractVyvezDate(sp.vyvezeneKedy)).filter(Boolean))].sort((a,b)=>{
+    // Zoraď zostupne (najnovší navrchu): d.m.yyyy -> porovnaj
+    const pa=a.split('.'), pb=b.split('.');
+    const da=new Date(pa[2],pa[1]-1,pa[0]), db=new Date(pb[2],pb[1]-1,pb[0]);
+    return db-da;
+  });
+
   pedEl.innerHTML = `<option value="">${t('stav')||'PED'} (${t('vsetky')})</option>` + peds.map(v=>`<option value="${v}"${v===pedVal?' selected':''}>${v}</option>`).join('');
   balikEl.innerHTML = `<option value="">${t('balik')} (${t('vsetky')})</option>` + baliks.map(v=>`<option value="${v}"${v===balikVal?' selected':''}>${v}</option>`).join('');
   nakEl.innerHTML = `<option value="">${t('nakladka')} (${t('vsetky')})</option>` + naks.map(v=>`<option value="${v}"${v===nakVal?' selected':''}>${v}</option>`).join('');
   datEl.innerHTML = `<option value="">${t('datum')} (${t('vsetky')})</option>` + dats.map(v=>`<option value="${v}"${v===datVal?' selected':''}>${v}</option>`).join('');
+  if(vyvezDatEl) vyvezDatEl.innerHTML = `<option value="">Dát. vyvezenia (všetky)</option>` + vyvezDats.map(v=>`<option value="${v}"${v===vyvezDatVal?' selected':''}>${v}</option>`).join('');
 }
 
 function renderPrehlad(){
@@ -5272,8 +5288,15 @@ function renderPrehlad(){
   const filterBalik = (document.getElementById('filterBalik')||{}).value||'';
   const filterNak = (document.getElementById('filterNakladka')||{}).value||'';
   const filterDat = (document.getElementById('filterDatum')||{}).value||'';
+  const filterVyvezDat = (document.getElementById('filterVyvezDatum')||{}).value||'';
   const all=getAllSpools();
   populatePrehladFilters(all);
+  // Helper: extrahuj dátum z "2.6.2026, 14:30:00"
+  function extractVyvezDate(kedy){
+    if(!kedy) return '';
+    const m=(kedy||'').match(/^(\d{1,2}\.\d{1,2}\.\d{4})/);
+    return m?m[1]:kedy.split(',')[0].trim();
+  }
   const rows=all.filter(sp=>{
     if(prehladFilter==='volny'&&(sp.balikId||sp.nakladkaId||sp.vyvezene)) return false;
     if(prehladFilter==='balik'&&!sp.balikId) return false;
@@ -5287,6 +5310,10 @@ function renderPrehlad(){
       const _fnk=_fnid&&nakladky[_fnid];
       if(filterNak){const n=_fnk?_fnk.name:''; if(n!==filterNak) return false;}
       if(filterDat){const d=_fnk?_fnk.date:''; if(d!==filterDat) return false;}
+    }
+    if(filterVyvezDat){
+      const spVyvezDat=extractVyvezDate(sp.vyvezeneKedy||'');
+      if(spVyvezDat!==filterVyvezDat) return false;
     }
     return true;
   }).sort((a,b)=>a.sec.localeCompare(b.sec)||a.iso.localeCompare(b.iso)||(parseInt(a.num)||0)-(parseInt(b.num)||0));
